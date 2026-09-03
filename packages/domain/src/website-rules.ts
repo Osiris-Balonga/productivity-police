@@ -13,17 +13,48 @@ export interface WebsiteRuleSet {
   rules: readonly WebsiteRule[];
 }
 
-function domainKey(domain: string): string {
-  return domain.trim().toLowerCase();
+export function canonicalizeDomain(input: string): string {
+  const value = input.trim();
+  const parseable = /^[a-z][a-z\d+.-]*:\/\//i.test(value)
+    ? value
+    : `http://${value}`;
+
+  let hostname: string;
+
+  try {
+    hostname = new URL(parseable).hostname;
+  } catch {
+    throw new RangeError("A valid website domain or URL is required");
+  }
+
+  const canonical = hostname
+    .toLowerCase()
+    .replace(/\.+$/, "")
+    .replace(/^www\./, "");
+
+  if (canonical.length === 0) {
+    throw new RangeError("A valid website domain or URL is required");
+  }
+
+  return canonical;
+}
+
+export function matchesCanonicalDomain(
+  candidateInput: string,
+  ruleInput: string,
+): boolean {
+  const candidate = canonicalizeDomain(candidateInput);
+  const rule = canonicalizeDomain(ruleInput);
+
+  return candidate === rule || candidate.endsWith(`.${rule}`);
 }
 
 export function resolveWebsiteRule(
   ruleSet: WebsiteRuleSet,
   domain: string,
 ): WebsiteRuleResolution {
-  const candidate = domainKey(domain);
-  const matchingRules = ruleSet.rules.filter(
-    (rule) => domainKey(rule.domain) === candidate,
+  const matchingRules = ruleSet.rules.filter((rule) =>
+    matchesCanonicalDomain(domain, rule.domain),
   );
 
   if (matchingRules.some((rule) => rule.list === "whitelist")) {

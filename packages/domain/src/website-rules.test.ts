@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveWebsiteRule, type WebsiteRuleSet } from "./website-rules";
+import {
+  canonicalizeDomain,
+  resolveWebsiteRule,
+  type WebsiteRuleSet,
+} from "./website-rules";
 
 const rules: WebsiteRuleSet = {
   rules: [
@@ -40,5 +44,32 @@ describe("website rule resolution", () => {
 
   it("WEB-03 resolves an unlisted domain as neutral", () => {
     expect(resolveWebsiteRule(rules, "work.test")).toBe("NEUTRAL");
+  });
+
+  it("WEB-05 canonicalizes a URL to a lowercase ASCII domain", () => {
+    expect(
+      canonicalizeDomain(
+        "https://member:secret@www.Exämple.com.:8443/watch?q=1#player",
+      ),
+    ).toBe("xn--exmple-cua.com");
+  });
+
+  it("WEB-06 matches real subdomains without matching false suffixes", () => {
+    const domainRules: WebsiteRuleSet = {
+      rules: [
+        {
+          id: "example-blacklist",
+          name: "Example",
+          domain: "example.com",
+          list: "blacklist",
+          createdAt: "2026-09-03T00:00:00.000Z",
+        },
+      ],
+    };
+
+    expect(resolveWebsiteRule(domainRules, "media.example.com")).toBe(
+      "BLACKLIST",
+    );
+    expect(resolveWebsiteRule(domainRules, "notexample.com")).toBe("NEUTRAL");
   });
 });
