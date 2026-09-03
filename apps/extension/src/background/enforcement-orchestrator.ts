@@ -1,8 +1,10 @@
 import {
   evaluateAccess,
+  isTabOverrideValid,
   matchWebsiteRule,
   type AccessDecision,
   type ScheduleState,
+  type TabOverride,
   type WebsiteRuleSet,
 } from "@productivity-police/domain";
 import type { SupportedLocale } from "@productivity-police/i18n";
@@ -19,12 +21,14 @@ export interface EnforcementSnapshot {
   usedSeconds: number;
   allowanceSeconds: number;
   locale: SupportedLocale;
+  overrides?: readonly TabOverride[];
 }
 
 export interface EnforcementDecisionMessage {
   type: "ENFORCEMENT_DECISION";
   decision: Readonly<AccessDecision>;
   locale: SupportedLocale;
+  siteId: string | undefined;
 }
 
 export type DecisionSender = (
@@ -52,7 +56,11 @@ export async function reevaluateOpenTabs(
 
       const decision = evaluateAccess({
         enabled: snapshot.enabled,
-        overrideValid: false,
+        overrideValid: isTabOverrideValid(
+          snapshot.overrides?.find((override) => override.tabId === tab.id),
+          tab.id,
+          matchedRule?.id ?? "",
+        ),
         websiteResolution:
           matchedRule?.list === "whitelist"
             ? "WHITELIST"
@@ -68,6 +76,7 @@ export async function reevaluateOpenTabs(
         type: "ENFORCEMENT_DECISION",
         decision,
         locale: snapshot.locale,
+        siteId: matchedRule?.id,
       });
     }),
   );

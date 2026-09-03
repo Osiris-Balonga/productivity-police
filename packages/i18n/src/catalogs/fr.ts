@@ -14,6 +14,20 @@ export const fr = {
   "nav.dashboard": "Tableau de bord",
   "nav.integrations": "Intégrations",
   "nav.settings": "Paramètres",
+  "override.error": "L’exception n’a pas pu être accordée. Réessayez.",
+  "override.firstBody":
+    "Confirmez que vous comprenez que ce temps compte dans votre engagement.",
+  "override.firstConfirm": "Je comprends",
+  "override.firstTitle": "Avez-vous besoin d’y accéder maintenant ?",
+  "override.justificationLabel": "Pourquoi cet accès est-il nécessaire ?",
+  "override.justificationPlaceholder":
+    "Donnez une raison professionnelle précise",
+  "override.request": "Demander une exception",
+  "override.secondBody":
+    "Cette exception ne vaut que pour cet onglet et sera enregistrée.",
+  "override.secondConfirm": "Continuer quand même",
+  "override.secondTitle": "Êtes-vous sûr ?",
+  "override.submit": "Débloquer cet onglet",
   "quota.remaining": "{minutes} minutes restantes",
   "status.break": "Pause",
   "status.offDuty": "Hors service",

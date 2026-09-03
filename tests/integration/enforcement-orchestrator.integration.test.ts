@@ -48,6 +48,7 @@ describe("Chrome enforcement orchestration", () => {
             reason: "ALLOWANCE_EXHAUSTED",
           },
           locale: "en",
+          siteId: "video-site",
         },
       },
     ]);

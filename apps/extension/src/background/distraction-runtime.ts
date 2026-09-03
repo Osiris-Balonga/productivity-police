@@ -1,9 +1,13 @@
 import {
+  confirmOverrideRequest,
   evaluateWorkScheduleAt,
   getSystemTimeZoneContext,
   isDistractionClockState,
+  isTabOverrideValid,
   matchWebsiteRule,
   resumeDistractionClock,
+  startOverrideRequest,
+  submitOverrideRequest,
   toLocalDate,
   transitionDistractionClock,
   validateWorkSchedule,
@@ -20,6 +24,7 @@ import {
 } from "@productivity-police/storage";
 
 import { reevaluateOpenTabs } from "./enforcement-orchestrator";
+import { InMemoryTabOverrideRegistry } from "./tab-override-registry";
 
 const CLOCK_KEY = "distractionClockState";
 const HEARTBEAT_ALARM = "distraction-heartbeat";
@@ -66,11 +71,22 @@ function readRuleSet(value: unknown): WebsiteRuleSet {
   return { rules: value };
 }
 
+function isGrantOverrideMessage(
+  value: unknown,
+): value is { type: "GRANT_OVERRIDE"; justification: string } {
+  return (
+    isRecord(value) &&
+    value.type === "GRANT_OVERRIDE" &&
+    typeof value.justification === "string"
+  );
+}
+
 export function startDistractionRuntime(): void {
   const localArea = new ChromeStorageArea(chrome.storage.local);
   const sessionArea = new ChromeStorageArea(chrome.storage.session);
   const storage = new VersionedStorageRepository(localArea);
   const usage = new DailyUsageRepository(storage);
+  const overrides = new InMemoryTabOverrideRegistry();
   const clock = new SessionValueRepository(
     sessionArea,
     CLOCK_KEY,
@@ -120,7 +136,14 @@ export function startDistractionRuntime(): void {
           : matchedRule?.list === "blacklist"
             ? "BLACKLIST"
             : "NEUTRAL",
-      overrideActive: false,
+      overrideActive:
+        activeTab?.id !== undefined && matchedRule?.id !== undefined
+          ? isTabOverrideValid(
+              overrides.get(activeTab.id),
+              activeTab.id,
+              matchedRule.id,
+            )
+          : false,
       activeTab: activeTab !== undefined,
       focusedWindow: focusedWindow.focused,
       idle: currentIdleState !== "active",
@@ -157,6 +180,7 @@ export function startDistractionRuntime(): void {
         usedSeconds: dailyUsage.usedSeconds,
         allowanceSeconds,
         locale: settings.locale === "fr" ? "fr" : "en",
+        overrides: overrides.list(),
       },
       openTabs,
       async (tabId, message) => {
@@ -179,7 +203,8 @@ export function startDistractionRuntime(): void {
   chrome.tabs.onUpdated.addListener(() => {
     queueReconciliation();
   });
-  chrome.tabs.onRemoved.addListener(() => {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    overrides.remove(tabId);
     queueReconciliation();
   });
   chrome.windows.onFocusChanged.addListener(() => {
@@ -198,6 +223,65 @@ export function startDistractionRuntime(): void {
     if (alarm.name === HEARTBEAT_ALARM) {
       queueReconciliation();
     }
+  });
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (!isGrantOverrideMessage(message)) {
+      return false;
+    }
+
+    void (async () => {
+      const tabId = sender.tab?.id;
+      const url = sender.tab?.url;
+      const envelope = await storage.read();
+      if (tabId === undefined || url === undefined || envelope === undefined) {
+        return false;
+      }
+
+      const rule = matchWebsiteRule(readRuleSet(envelope.websiteRules), url);
+      if (rule?.list !== "blacklist") {
+        return false;
+      }
+
+      const request = confirmOverrideRequest(
+        confirmOverrideRequest(startOverrideRequest(tabId, rule.id)),
+      );
+      const grant = submitOverrideRequest(
+        request,
+        message.justification,
+        new Date(),
+      );
+      if (grant.override === undefined || grant.activity === undefined) {
+        return false;
+      }
+
+      overrides.save(grant.override);
+      const activity: unknown[] = Array.isArray(envelope.activity)
+        ? (envelope.activity as unknown[])
+        : [];
+      await storage.write({
+        ...envelope,
+        activity: [
+          ...activity,
+          {
+            id: crypto.randomUUID(),
+            type: grant.activity.type,
+            occurredAt: grant.activity.occurredAt,
+            tabId: grant.activity.tabId,
+            siteId: grant.activity.siteId,
+            metadata: { justification: grant.activity.justification },
+          },
+        ],
+      });
+      queueReconciliation();
+      return true;
+    })()
+      .then((granted) => {
+        sendResponse({ granted });
+      })
+      .catch(() => {
+        sendResponse({ granted: false });
+      });
+    return true;
   });
   chrome.idle.setDetectionInterval(60);
   void chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 0.5 });

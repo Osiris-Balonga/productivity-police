@@ -5,6 +5,8 @@ export type ContentSurfaceAction = "ALLOW" | "TRACK" | "WARN" | "BLOCK";
 export interface ContentSurfaceInput {
   action: ContentSurfaceAction;
   locale: SupportedLocale;
+  siteId?: string | undefined;
+  grantOverride?: ((justification: string) => Promise<boolean>) | undefined;
 }
 
 export interface ContentSurfaceModel {
@@ -16,6 +18,17 @@ export interface ContentSurfaceModel {
 }
 
 const HOST_ID = "productivity-police-surface-host";
+type OverrideUiStage =
+  "FIRST_CONFIRMATION" | "SECOND_CONFIRMATION" | "JUSTIFICATION_REQUIRED";
+
+export function createContentSurfaceKey(input: ContentSurfaceInput): string {
+  return JSON.stringify([
+    input.action,
+    input.locale,
+    input.siteId ?? null,
+    input.grantOverride !== undefined,
+  ]);
+}
 
 export function createContentSurfaceModel(
   input: ContentSurfaceInput,
@@ -45,8 +58,14 @@ export function renderContentSurface(
   document: Document,
   input: ContentSurfaceInput,
 ): void {
-  document.getElementById(HOST_ID)?.remove();
   document.documentElement.dataset.productivityPoliceDecision = input.action;
+
+  const surfaceKey = createContentSurfaceKey(input);
+  const existingHost = document.getElementById(HOST_ID);
+  if (existingHost?.dataset.productivityPoliceSurfaceKey === surfaceKey) {
+    return;
+  }
+  existingHost?.remove();
 
   const model = createContentSurfaceModel(input);
   if (model === null) {
@@ -56,6 +75,7 @@ export function renderContentSurface(
   const host = document.createElement("div");
   host.id = HOST_ID;
   host.dataset.productivityPoliceSurface = model.kind;
+  host.dataset.productivityPoliceSurfaceKey = surfaceKey;
   const shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent = styles;
@@ -78,12 +98,137 @@ export function renderContentSurface(
   const body = document.createElement("p");
   body.textContent = model.body;
   surface.append(label, title, body);
+  if (
+    model.kind === "blocker" &&
+    input.siteId !== undefined &&
+    input.grantOverride !== undefined
+  ) {
+    appendOverrideControls(document, surface, {
+      ...input,
+      siteId: input.siteId,
+      grantOverride: input.grantOverride,
+    });
+  }
   shadow.append(style, surface);
   document.documentElement.append(host);
 
   if (model.blocking) {
     surface.focus({ preventScroll: true });
   }
+}
+
+function appendOverrideControls(
+  document: Document,
+  surface: HTMLElement,
+  input: ContentSurfaceInput & {
+    siteId: string;
+    grantOverride: (justification: string) => Promise<boolean>;
+  },
+): void {
+  const controls = document.createElement("div");
+  controls.className = "override-controls";
+  let stage: OverrideUiStage | undefined;
+
+  const renderStage = (): void => {
+    controls.replaceChildren();
+    if (stage === undefined) {
+      const requestButton = createButton(
+        document,
+        translate(input.locale, "override.request"),
+      );
+      requestButton.addEventListener("click", () => {
+        stage = "FIRST_CONFIRMATION";
+        renderStage();
+      });
+      controls.append(requestButton);
+      return;
+    }
+
+    if (stage === "FIRST_CONFIRMATION" || stage === "SECOND_CONFIRMATION") {
+      const first = stage === "FIRST_CONFIRMATION";
+      const prompt = document.createElement("div");
+      prompt.className = "override-prompt";
+      const heading = document.createElement("h2");
+      heading.textContent = translate(
+        input.locale,
+        first ? "override.firstTitle" : "override.secondTitle",
+      );
+      const explanation = document.createElement("p");
+      explanation.textContent = translate(
+        input.locale,
+        first ? "override.firstBody" : "override.secondBody",
+      );
+      const confirmButton = createButton(
+        document,
+        translate(
+          input.locale,
+          first ? "override.firstConfirm" : "override.secondConfirm",
+        ),
+      );
+      confirmButton.addEventListener("click", () => {
+        stage = first ? "SECOND_CONFIRMATION" : "JUSTIFICATION_REQUIRED";
+        renderStage();
+      });
+      prompt.append(heading, explanation, confirmButton);
+      controls.append(prompt);
+      return;
+    }
+
+    {
+      const form = document.createElement("form");
+      form.className = "override-form";
+      const justificationLabel = document.createElement("label");
+      justificationLabel.textContent = translate(
+        input.locale,
+        "override.justificationLabel",
+      );
+      const textarea = document.createElement("textarea");
+      textarea.required = true;
+      textarea.rows = 3;
+      textarea.placeholder = translate(
+        input.locale,
+        "override.justificationPlaceholder",
+      );
+      const submitButton = createButton(
+        document,
+        translate(input.locale, "override.submit"),
+      );
+      submitButton.type = "submit";
+      const error = document.createElement("p");
+      error.className = "override-error";
+      error.setAttribute("role", "alert");
+      justificationLabel.append(textarea);
+      form.append(justificationLabel, submitButton, error);
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const justification = textarea.value.trim();
+        if (justification.length === 0) {
+          textarea.reportValidity();
+          return;
+        }
+        submitButton.disabled = true;
+        void input.grantOverride(justification).then((granted) => {
+          if (granted) {
+            document.getElementById(HOST_ID)?.remove();
+            return;
+          }
+          submitButton.disabled = false;
+          error.textContent = translate(input.locale, "override.error");
+        });
+      });
+      controls.append(form);
+    }
+  };
+
+  renderStage();
+  surface.append(controls);
+}
+
+function createButton(document: Document, text: string): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = text;
+  return button;
 }
 
 const styles = `
@@ -169,6 +314,77 @@ const styles = `
     margin: 14px 0 0;
     max-width: 58ch;
     text-wrap: pretty;
+  }
+
+  .override-controls {
+    margin-top: 32px;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  .override-prompt,
+  .override-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    gap: 8px;
+  }
+
+  textarea {
+    background: var(--pp-bg);
+    border: 1px solid oklch(0.72 0.025 32.1);
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: var(--pp-ink);
+    font: inherit;
+    font-weight: 400;
+    line-height: 1.45;
+    min-height: 88px;
+    padding: 12px;
+    resize: vertical;
+    width: 100%;
+  }
+
+  textarea:focus-visible,
+  button:focus-visible {
+    outline: 3px solid oklch(0.73 0.14 32.1);
+    outline-offset: 3px;
+  }
+
+  button {
+    align-self: flex-start;
+    background: var(--pp-block);
+    border: 0;
+    border-radius: 8px;
+    color: oklch(1 0 0);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  button:hover { background: oklch(0.52 0.19 29); }
+  button:active { background: oklch(0.47 0.17 29); }
+  button:disabled { cursor: wait; opacity: 0.62; }
+
+  .override-error {
+    color: oklch(0.48 0.18 29);
+    min-height: 1.5em;
   }
 
   @keyframes pp-enter {
