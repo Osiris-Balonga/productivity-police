@@ -1,0 +1,21 @@
+name: Feature proposal
+description: Propose a product outcome outside the approved V1 plan.
+labels: ["type:enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the need without prescribing implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Expected outcome and boundaries
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy, permissions, and local-first impact
