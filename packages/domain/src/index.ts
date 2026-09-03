@@ -4,6 +4,7 @@ export * from "./access-rule-engine";
 export * from "./allowance-warning";
 export * from "./distraction-clock";
 export * from "./override-workflow";
+export * from "./universe";
 export * from "./schedule";
 export * from "./time-zone";
 export * from "./website-rules";
