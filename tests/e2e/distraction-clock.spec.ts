@@ -40,6 +40,9 @@ test.beforeAll(async ({ browserName }, testInfo) => {
   );
   context = await chromium.launchPersistentContext(userDataDirectory, {
     headless: false,
+    ...(process.env.PLAYWRIGHT_CHROME_PATH === undefined
+      ? {}
+      : { executablePath: process.env.PLAYWRIGHT_CHROME_PATH }),
     args: [
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,
@@ -61,6 +64,41 @@ test.afterAll(async () => {
       }
     });
   });
+});
+
+test("PP-028 opens a usable popup from a clean extension install", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  const extensionId = new URL(worker.url()).host;
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup/index.html`);
+
+  await expect(popup.getByText("Local popup data is unavailable.")).toHaveCount(
+    0,
+  );
+  await expect(
+    popup.getByRole("button", {
+      name: /^(Open dashboard|Ouvrir le tableau de bord)$/,
+    }),
+  ).toBeVisible();
+  await expect
+    .poll(() =>
+      worker.evaluate(async () => {
+        const values = await chrome.storage.local.get("productivityPolice");
+        const envelope = values.productivityPolice as
+          | {
+              onboarding?: { completed?: boolean };
+              settings?: { enabled?: boolean };
+            }
+          | undefined;
+        return {
+          configured: envelope?.onboarding?.completed,
+          enabled: envelope?.settings?.enabled,
+        };
+      }),
+    )
+    .toEqual({ configured: false, enabled: false });
 });
 
 test("E2E-07 alternates two blacklisted tabs without double counting", async ({
@@ -282,7 +320,7 @@ test("E2E-01 shows the blocker immediately for an exhausted blacklisted site", a
   );
 });
 
-test("UI-01 shows BREAK in the popup without consuming allowance", async () => {
+test("E2E-05 shows BREAK in the popup without consuming allowance", async () => {
   if (context === undefined) {
     throw new Error("The extension browser context is unavailable");
   }
@@ -355,7 +393,7 @@ test("UI-01 shows BREAK in the popup without consuming allowance", async () => {
   expect(await readTotalUsage(worker)).toBe(usageBefore);
 });
 
-test("UI-03 rerenders blocker, dashboard, and popup after a locale change", async () => {
+test("E2E-04 rerenders blocker, dashboard, and popup after a locale change", async () => {
   if (context === undefined) {
     throw new Error("The extension browser context is unavailable");
   }
