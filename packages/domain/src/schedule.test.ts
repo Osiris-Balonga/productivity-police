@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   evaluateWorkSchedule,
+  validateWorkSchedule,
   type LocalScheduleTime,
   type WorkSchedule,
 } from "./index";
@@ -40,5 +41,48 @@ describe("work schedule evaluation", () => {
     expect(evaluateWorkSchedule(mondaySchedule, mondayAt("20:00"))).toBe(
       "OFF_DUTY",
     );
+  });
+
+  it("SCH-07 treats work periods as start-inclusive and end-exclusive", () => {
+    expect(evaluateWorkSchedule(mondaySchedule, mondayAt("09:00"))).toBe(
+      "ON_DUTY",
+    );
+    expect(evaluateWorkSchedule(mondaySchedule, mondayAt("12:00"))).toBe(
+      "BREAK",
+    );
+    expect(evaluateWorkSchedule(mondaySchedule, mondayAt("18:00"))).toBe(
+      "OFF_DUTY",
+    );
+  });
+
+  it("SCH-08 rejects overlapping periods", () => {
+    const errors = validateWorkSchedule({
+      days: [
+        {
+          weekday: "monday",
+          enabled: true,
+          periods: [
+            { start: "09:00", end: "12:00" },
+            { start: "11:30", end: "14:00" },
+          ],
+        },
+      ],
+    });
+
+    expect(errors.map((error) => error.code)).toEqual(["OVERLAPPING_PERIODS"]);
+  });
+
+  it("SCH-09 rejects periods that cross midnight", () => {
+    const errors = validateWorkSchedule({
+      days: [
+        {
+          weekday: "monday",
+          enabled: true,
+          periods: [{ start: "22:00", end: "02:00" }],
+        },
+      ],
+    });
+
+    expect(errors.map((error) => error.code)).toEqual(["OVERNIGHT_PERIOD"]);
   });
 });

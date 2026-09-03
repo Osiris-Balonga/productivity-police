@@ -31,6 +31,15 @@ export interface LocalScheduleTime {
   time: string;
 }
 
+export type ScheduleValidationErrorCode =
+  "INVALID_TIME" | "EMPTY_PERIOD" | "OVERNIGHT_PERIOD" | "OVERLAPPING_PERIODS";
+
+export interface ScheduleValidationError {
+  code: ScheduleValidationErrorCode;
+  weekday: Weekday;
+  periodIndex: number;
+}
+
 function toMinuteOfDay(time: string): number {
   const match = /^(\d{2}):(\d{2})$/.exec(time);
   const hours = match?.[1] === undefined ? Number.NaN : Number(match[1]);
@@ -76,4 +85,76 @@ export function evaluateWorkSchedule(
   const finalEnd = Math.max(...periods.map((period) => period.end));
 
   return minute > firstStart && minute < finalEnd ? "BREAK" : "OFF_DUTY";
+}
+
+export function validateWorkSchedule(
+  schedule: WorkSchedule,
+): readonly ScheduleValidationError[] {
+  const errors: ScheduleValidationError[] = [];
+
+  for (const day of schedule.days) {
+    const validPeriods: {
+      start: number;
+      end: number;
+      periodIndex: number;
+    }[] = [];
+
+    day.periods.forEach((period, periodIndex) => {
+      let start: number;
+      let end: number;
+
+      try {
+        start = toMinuteOfDay(period.start);
+        end = toMinuteOfDay(period.end);
+      } catch {
+        errors.push({
+          code: "INVALID_TIME",
+          weekday: day.weekday,
+          periodIndex,
+        });
+        return;
+      }
+
+      if (start === end) {
+        errors.push({
+          code: "EMPTY_PERIOD",
+          weekday: day.weekday,
+          periodIndex,
+        });
+        return;
+      }
+
+      if (start > end) {
+        errors.push({
+          code: "OVERNIGHT_PERIOD",
+          weekday: day.weekday,
+          periodIndex,
+        });
+        return;
+      }
+
+      validPeriods.push({ start, end, periodIndex });
+    });
+
+    validPeriods.sort((left, right) => left.start - right.start);
+
+    for (let index = 1; index < validPeriods.length; index += 1) {
+      const previous = validPeriods[index - 1];
+      const current = validPeriods[index];
+
+      if (
+        previous !== undefined &&
+        current !== undefined &&
+        current.start < previous.end
+      ) {
+        errors.push({
+          code: "OVERLAPPING_PERIODS",
+          weekday: day.weekday,
+          periodIndex: current.periodIndex,
+        });
+      }
+    }
+  }
+
+  return errors;
 }
