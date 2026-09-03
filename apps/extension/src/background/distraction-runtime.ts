@@ -74,17 +74,16 @@ export function startDistractionRuntime(): void {
     CLOCK_KEY,
     isDistractionClockState,
   );
+  let currentIdleState: "active" | "idle" | "locked" = "active";
   let pending = Promise.resolve();
 
   const reconcile = async (resumed: boolean): Promise<void> => {
     const now = new Date();
-    const [envelope, persistedClock, idleState, focusedWindow] =
-      await Promise.all([
-        storage.read(),
-        clock.read(),
-        chrome.idle.queryState(60),
-        chrome.windows.getLastFocused({ populate: true }),
-      ]);
+    const [envelope, persistedClock, focusedWindow] = await Promise.all([
+      storage.read(),
+      clock.read(),
+      chrome.windows.getLastFocused({ populate: true }),
+    ]);
     if (envelope === undefined) {
       return;
     }
@@ -120,7 +119,7 @@ export function startDistractionRuntime(): void {
       overrideActive: false,
       activeTab: activeTab !== undefined,
       focusedWindow: focusedWindow.focused,
-      idle: idleState !== "active",
+      idle: currentIdleState !== "active",
       localDate: toLocalDate(now, timeZone),
       ...(activeTab?.id === undefined ? {} : { tabId: activeTab.id }),
       ...(matchedRule?.id === undefined ? {} : { siteId: matchedRule.id }),
@@ -155,7 +154,8 @@ export function startDistractionRuntime(): void {
   chrome.windows.onFocusChanged.addListener(() => {
     queueReconciliation();
   });
-  chrome.idle.onStateChanged.addListener(() => {
+  chrome.idle.onStateChanged.addListener((state) => {
+    currentIdleState = state;
     queueReconciliation();
   });
   chrome.storage.onChanged.addListener((_changes, areaName) => {
@@ -168,6 +168,10 @@ export function startDistractionRuntime(): void {
       queueReconciliation();
     }
   });
+  chrome.idle.setDetectionInterval(60);
   void chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 0.5 });
-  queueReconciliation(true);
+  void chrome.idle.queryState(60).then((state) => {
+    currentIdleState = state;
+    queueReconciliation(true);
+  });
 }

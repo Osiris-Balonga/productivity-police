@@ -113,6 +113,7 @@ test("E2E-07 alternates two blacklisted tabs without double counting", async ({
         usageByDate: {},
       },
     });
+    chrome.idle.setDetectionInterval(300);
   });
 
   const tabA = await context.newPage();
