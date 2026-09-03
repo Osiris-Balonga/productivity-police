@@ -499,6 +499,66 @@ test("E2E-08 persists an override through worker suspension and expires it off-s
   await expect.poll(() => readOverrideCount(worker)).toBe(0);
 });
 
+test("E2E-09 materializes a missed weekly report once across worker restarts", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  await worker.evaluate(async () => {
+    const weekdays = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+    const date = new Date();
+    const day = date.getUTCDay();
+    date.setUTCDate(date.getUTCDate() - ((day + 6) % 7) - 7);
+    const localDate = date.toISOString().slice(0, 10);
+    await chrome.storage.local.set({
+      productivityPolice: {
+        schemaVersion: 1,
+        settings: {
+          enabled: true,
+          locale: "en",
+          universe: "student",
+          dailyAllowanceMinutes: 30,
+          schedule: {
+            days: weekdays.map((weekday) => ({
+              weekday,
+              enabled: weekday === "monday",
+              periods:
+                weekday === "monday" ? [{ start: "09:00", end: "17:00" }] : [],
+            })),
+          },
+        },
+        websiteRules: [],
+        usageByDate: {
+          [localDate]: {
+            localDate,
+            usedSeconds: 120,
+            bySiteSeconds: { video: 120 },
+            warningTriggered: false,
+            exhaustedTriggered: false,
+          },
+        },
+        activity: [],
+        reports: [],
+      },
+    });
+  });
+
+  const wakeTab = await context.newPage();
+  await suspendWorker(context, wakeTab);
+  await wakeTab.goto(`http://127.0.0.1:${String(port)}/report-recovery-one`);
+  await expect.poll(() => readReportCount(worker)).toBe(1);
+  await suspendWorker(context, wakeTab);
+  await wakeTab.goto(`http://127.0.0.1:${String(port)}/report-recovery-two`);
+  await expect.poll(() => readReportCount(worker)).toBe(1);
+});
+
 async function configureBlockedSite(
   locale: "fr" | "en" = "en",
   universe: "student" | "pro" = "student",
@@ -605,4 +665,22 @@ async function readUsage(background: Worker): Promise<StoredUsage> {
 
 async function readTotalUsage(background: Worker): Promise<number> {
   return (await readUsage(background)).usedSeconds;
+}
+
+async function suspendWorker(
+  browserContext: BrowserContext,
+  wakeTab: import("@playwright/test").Page,
+): Promise<void> {
+  const devtools = await browserContext.newCDPSession(wakeTab);
+  await devtools.send("ServiceWorker.enable");
+  await devtools.send("ServiceWorker.stopAllWorkers");
+  await devtools.detach();
+}
+
+async function readReportCount(background: Worker): Promise<number> {
+  return background.evaluate(async () => {
+    const values = await chrome.storage.local.get("productivityPolice");
+    const envelope = values.productivityPolice as { reports?: unknown[] };
+    return envelope.reports?.length ?? 0;
+  });
 }
