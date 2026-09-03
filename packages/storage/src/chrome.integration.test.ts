@@ -15,8 +15,9 @@ describe("Chrome storage adapter", () => {
     });
     const set = vi.fn().mockResolvedValue(undefined);
     const remove = vi.fn().mockResolvedValue(undefined);
+    const clear = vi.fn().mockResolvedValue(undefined);
     const repository = new VersionedStorageRepository(
-      new ChromeStorageArea({ get, set, remove }),
+      new ChromeStorageArea({ get, set, remove, clear }),
     );
 
     await expect(repository.read()).resolves.toEqual({

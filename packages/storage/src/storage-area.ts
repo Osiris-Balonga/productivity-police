@@ -2,6 +2,7 @@ export interface StorageArea {
   get(key: string): Promise<Record<string, unknown>>;
   set(items: Record<string, unknown>): Promise<void>;
   remove(key: string): Promise<void>;
+  clear(): Promise<void>;
 }
 
 function clone<T>(value: T): T {
@@ -39,12 +40,20 @@ export class MemoryStorageArea implements StorageArea {
     this.#writeCount += 1;
     return Promise.resolve();
   }
+
+  clear(): Promise<void> {
+    for (const key of Object.keys(this.#values))
+      Reflect.deleteProperty(this.#values, key);
+    this.#writeCount += 1;
+    return Promise.resolve();
+  }
 }
 
 export interface ChromeStorageAreaLike {
   get(key: string): Promise<Record<string, unknown>>;
   set(items: Record<string, unknown>): Promise<void>;
   remove(key: string): Promise<void>;
+  clear(): Promise<void>;
 }
 
 export class ChromeStorageArea implements StorageArea {
@@ -64,5 +73,9 @@ export class ChromeStorageArea implements StorageArea {
 
   remove(key: string): Promise<void> {
     return this.#area.remove(key);
+  }
+
+  clear(): Promise<void> {
+    return this.#area.clear();
   }
 }
