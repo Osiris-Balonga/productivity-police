@@ -164,6 +164,11 @@ describe("provider OAuth lifecycle", () => {
     await service.connect(adapter);
 
     expect(requestedScopes).toEqual(minimumReadScopes.github);
+    expect(minimumReadScopes).toEqual({
+      github: ["issues:read"],
+      jira: ["read:jira-work", "offline_access"],
+      linear: ["read"],
+    });
     await expect(repository.readCredential("github")).resolves.toEqual(
       CREDENTIAL,
     );
