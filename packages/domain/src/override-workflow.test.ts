@@ -11,14 +11,16 @@ const grantedAt = new Date("2026-09-03T10:00:00.000Z");
 
 function readyForJustification() {
   return confirmOverrideRequest(
-    confirmOverrideRequest(startOverrideRequest(7, "video-site")),
+    confirmOverrideRequest(
+      startOverrideRequest(7, "video-site", "videos.example.com"),
+    ),
   );
 }
 
 describe("override workflow", () => {
   it("OVR-01 remains blocked after only the first confirmation", () => {
     const request = confirmOverrideRequest(
-      startOverrideRequest(7, "video-site"),
+      startOverrideRequest(7, "video-site", "videos.example.com"),
     );
 
     expect(request.stage).toBe("SECOND_CONFIRMATION");
@@ -43,6 +45,7 @@ describe("override workflow", () => {
       override: {
         tabId: 7,
         siteId: "video-site",
+        canonicalDomain: "videos.example.com",
         justification: "Required reference material",
         grantedAt: "2026-09-03T10:00:00.000Z",
       },
@@ -82,7 +85,9 @@ describe("override workflow", () => {
   it("OVR-07 has no daily cap and emits one activity per grant", () => {
     const grants = [7, 8, 9].map((tabId) => {
       const request = confirmOverrideRequest(
-        confirmOverrideRequest(startOverrideRequest(tabId, "video-site")),
+        confirmOverrideRequest(
+          startOverrideRequest(tabId, "video-site", "videos.example.com"),
+        ),
       );
       return submitOverrideRequest(request, `Need ${String(tabId)}`, grantedAt);
     });
