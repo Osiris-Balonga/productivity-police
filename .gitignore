@@ -2,10 +2,13 @@ node_modules/
 dist/
 coverage/
 .artifacts/
+playwright-report/
+test-results/
+*.tsbuildinfo
+*.log
 .env
 .env.*
 !.env.example
-*.log
 *.docx
 .DS_Store
 Thumbs.db

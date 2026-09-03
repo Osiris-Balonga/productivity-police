@@ -13,16 +13,16 @@ The repository is the public `Osiris-Balonga/productivity-police`, following the
 
 ## Bootstrap rule
 
-The initial creation of `main` and `dev` at the same governance commit is the only direct-push exception. The active `protect-dev` and `protect-main` rulesets forbid deletion and non-fast-forward updates, require pull requests with resolved conversations, allow merge commits only, and require the trusted `branch-policy` check. Neither ruleset has a bypass actor.
+The initial creation of `main` and `dev` at the same governance commit is the only direct-push exception. The active `protect-dev` and `protect-main` rulesets forbid deletion and non-fast-forward updates, require pull requests with resolved conversations, allow merge commits only, and require the trusted checks listed below. Neither ruleset has a bypass actor.
 
 ## Required checks
 
-The repository starts with the trusted `branch-policy` check. L01 adds application checks progressively:
+The repository starts with the trusted `branch-policy` check. L01 activates these application checks:
 
 - `quality`: formatting, lint, and TypeScript.
-- `unit-tests`: domain and lightweight component tests.
+- `unit-tests`: domain and package unit tests.
 - `build`: extension production build and manifest audit.
-- `integration-tests`: storage and Chrome adapters when activated.
+- `integration-tests`: storage and Chrome adapter boundaries.
 - `e2e-chromium`: loaded-extension journeys when activated.
 
 A conditional suite must expose a stable success/not-applicable check before it becomes required. Do not require a check that has never run successfully on the repository.

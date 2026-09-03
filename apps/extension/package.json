@@ -1,0 +1,9 @@
+{
+  "name": "@productivity-police/extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build && node ../../tooling/validate-manifest.mjs"
+  }
+}
