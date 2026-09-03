@@ -4,8 +4,14 @@ import { startProviderRefreshRuntime } from "./provider-refresh-runtime";
 import { startReportingRuntime } from "./reporting-runtime";
 import { startRetentionRuntime } from "./retention-runtime";
 
-await initializeChromeFreshInstall();
-startDistractionRuntime();
-startProviderRefreshRuntime();
-startReportingRuntime();
-startRetentionRuntime();
+void initializeChromeFreshInstall().then(
+  startExtensionRuntimes,
+  startExtensionRuntimes,
+);
+
+function startExtensionRuntimes(): void {
+  startDistractionRuntime();
+  startProviderRefreshRuntime();
+  startReportingRuntime();
+  startRetentionRuntime();
+}
