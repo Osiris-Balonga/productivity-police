@@ -63,7 +63,11 @@ test.afterAll(async () => {
   });
 });
 
-test("E2E-07 alternates two blacklisted tabs without double counting", async () => {
+test("E2E-07 alternates two blacklisted tabs without double counting", async ({
+  browserName,
+}, testInfo) => {
+  testInfo.setTimeout(180_000);
+  expect(browserName).toBe("chromium");
   if (context === undefined) {
     throw new Error("The extension browser context is unavailable");
   }
@@ -118,11 +122,11 @@ test("E2E-07 alternates two blacklisted tabs without double counting", async () 
   await tabA.bringToFront();
 
   await expect.poll(() => readActiveSite(worker)).toBe("site-a");
-  await ageActiveClock(worker, 60);
+  await tabA.waitForTimeout(60_000);
 
   await tabB.bringToFront();
   await expect.poll(() => readActiveSite(worker)).toBe("site-b");
-  await ageActiveClock(worker, 60);
+  await tabB.waitForTimeout(60_000);
 
   await tabA.bringToFront();
   await expect.poll(() => readTotalUsage(worker)).toBeGreaterThanOrEqual(118);
@@ -140,28 +144,6 @@ async function readActiveSite(background: Worker): Promise<string | undefined> {
       { siteId?: string } | undefined;
     return state?.siteId;
   });
-}
-
-async function ageActiveClock(
-  background: Worker,
-  seconds: number,
-): Promise<void> {
-  await background.evaluate(async (elapsedSeconds) => {
-    const values = await chrome.storage.session.get("distractionClockState");
-    const state = values.distractionClockState as
-      Record<string, unknown> | undefined;
-    if (state === undefined) {
-      throw new Error("The distraction clock is not active");
-    }
-    await chrome.storage.session.set({
-      distractionClockState: {
-        ...state,
-        lastAccountedAt: new Date(
-          Date.now() - elapsedSeconds * 1_000,
-        ).toISOString(),
-      },
-    });
-  }, seconds);
 }
 
 interface StoredUsage {
