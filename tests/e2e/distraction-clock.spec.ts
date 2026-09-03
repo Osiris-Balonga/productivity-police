@@ -319,7 +319,6 @@ test("E2E-08 persists an override through worker suspension and expires it off-s
   const overriddenTab = await openAndGrantOverride("override-worker-before");
   await expect.poll(() => readOverrideCount(worker)).toBe(1);
 
-  const workerRestarted = context.waitForEvent("serviceworker");
   const devtools = await context.newCDPSession(overriddenTab);
   await devtools.send("ServiceWorker.enable");
   await devtools.send("ServiceWorker.stopAllWorkers");
@@ -327,7 +326,6 @@ test("E2E-08 persists an override through worker suspension and expires it off-s
   await overriddenTab.goto(
     `http://127.0.0.1:${String(port)}/override-worker-after`,
   );
-  worker = await workerRestarted;
   await expect
     .poll(() =>
       overriddenTab.getAttribute("html", "data-productivity-police-decision"),
@@ -336,6 +334,7 @@ test("E2E-08 persists an override through worker suspension and expires it off-s
   await expect(
     overriddenTab.locator('[data-productivity-police-surface="blocker"]'),
   ).toHaveCount(0);
+  await expect.poll(() => readOverrideCount(worker)).toBe(1);
 
   await overriddenTab.goto(
     `http://localhost:${String(port)}/override-worker-off-site`,
