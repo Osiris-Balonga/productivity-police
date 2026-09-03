@@ -71,17 +71,6 @@ test("PP-028 opens a usable popup from a clean extension install", async () => {
     throw new Error("The extension browser context is unavailable");
   }
   const extensionId = new URL(worker.url()).host;
-  const popup = await context.newPage();
-  await popup.goto(`chrome-extension://${extensionId}/popup/index.html`);
-
-  await expect(popup.getByText("Local popup data is unavailable.")).toHaveCount(
-    0,
-  );
-  await expect(
-    popup.getByRole("button", {
-      name: /^(Open dashboard|Ouvrir le tableau de bord)$/,
-    }),
-  ).toBeVisible();
   await expect
     .poll(() =>
       worker.evaluate(async () => {
@@ -99,6 +88,17 @@ test("PP-028 opens a usable popup from a clean extension install", async () => {
       }),
     )
     .toEqual({ configured: false, enabled: false });
+
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup/index.html`);
+  await expect(popup.getByText("Local popup data is unavailable.")).toHaveCount(
+    0,
+  );
+  await expect(
+    popup.getByRole("button", {
+      name: /^(Open dashboard|Ouvrir le tableau de bord)$/,
+    }),
+  ).toBeVisible();
 });
 
 test("E2E-07 alternates two blacklisted tabs without double counting", async ({
