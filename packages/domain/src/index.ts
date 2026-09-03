@@ -10,3 +10,4 @@ export * from "./schedule";
 export * from "./settings";
 export * from "./time-zone";
 export * from "./website-rules";
+export * from "./reporting";
