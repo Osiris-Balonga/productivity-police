@@ -17,8 +17,11 @@ let port: number;
 let context: BrowserContext | undefined;
 let worker: Worker;
 
-test.beforeAll(async (_fixtures, testInfo) => {
+test.beforeAll(async ({ browserName }, testInfo) => {
   testInfo.setTimeout(60_000);
+  if (browserName !== "chromium") {
+    throw new Error("Extension E2E tests require Chromium");
+  }
   server = createServer((_request, response) => {
     response.writeHead(200, { "content-type": "text/html" });
     response.end("<!doctype html><title>Synthetic distraction</title>");
