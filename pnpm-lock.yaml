@@ -61,7 +61,11 @@ importers:
 
   packages/storage: {}
 
-  packages/ui: {}
+  packages/ui:
+    dependencies:
+      '@productivity-police/domain':
+        specifier: workspace:*
+        version: link:../domain
 
 packages:
 
