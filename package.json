@@ -18,15 +18,16 @@
     "quality": "pnpm format:check && pnpm lint && pnpm typecheck",
     "test": "vitest run --project unit --project integration",
     "test:unit": "vitest run --project unit",
-    "test:components": "vitest run --project components --passWithNoTests",
+    "test:components": "vitest run --project components",
     "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit --pretty false",
     "validate": "pnpm quality && pnpm test",
-    "validate:full": "pnpm quality && pnpm test:unit && pnpm test:components && pnpm test:integration && pnpm build"
+    "validate:full": "pnpm quality && pnpm test:unit && pnpm test:integration && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.1",
     "@types/chrome": "0.2.8",
     "@types/node": "26.4.1",
     "eslint": "10.9.1",

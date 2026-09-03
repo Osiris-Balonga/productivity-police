@@ -1,5 +1,4 @@
 import {
-  CURRENT_SCHEMA_VERSION,
   isStorageEnvelope,
   ROOT_STORAGE_KEY,
   type StorageEnvelope,
@@ -56,19 +55,4 @@ export class VersionedStorageRepository implements StorageRepository {
 
     await this.#area.set({ [this.#rootKey]: envelope });
   }
-}
-
-export async function openCurrentStorage(
-  repository: StorageRepository,
-): Promise<StorageEnvelope | undefined> {
-  const envelope = await repository.read();
-
-  if (
-    envelope !== undefined &&
-    envelope.schemaVersion !== CURRENT_SCHEMA_VERSION
-  ) {
-    throw new UnsupportedSchemaVersionError(envelope.schemaVersion);
-  }
-
-  return envelope;
 }

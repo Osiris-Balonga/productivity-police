@@ -4,7 +4,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   MemoryStorageArea,
   VersionedStorageRepository,
-  openCurrentStorage,
+  migrateToCurrentSchema,
 } from "./index";
 
 describe("memory-backed versioned storage", () => {
@@ -17,7 +17,7 @@ describe("memory-backed versioned storage", () => {
     });
     const repository = new VersionedStorageRepository(area);
 
-    await expect(openCurrentStorage(repository)).resolves.toEqual({
+    await expect(migrateToCurrentSchema(repository)).resolves.toEqual({
       schemaVersion: CURRENT_SCHEMA_VERSION,
       settings: { locale: "en" },
     });
