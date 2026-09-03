@@ -8,6 +8,25 @@ export const fr = {
   "access.warningTitle": "Quota de distraction presque épuisé",
   "action.activate": "Activer Productivity Police",
   "app.name": "Productivity Police",
+  "dialogue.pro.blocked.frequent":
+    "Cinquième blocage. La priorité n’a pas changé.",
+  "dialogue.pro.blocked.standard.1": "Accès suspendu. Revenez au programme.",
+  "dialogue.pro.blocked.standard.2": "Ce site reste en dehors du programme.",
+  "dialogue.pro.override.granted": "Exception enregistrée pour cet onglet.",
+  "dialogue.pro.warning.morning":
+    "Protégez les premières heures de concentration.",
+  "dialogue.pro.warning.standard":
+    "Le budget de distraction est presque épuisé.",
+  "dialogue.pro.work.ended": "Plage de travail terminée. Examinez le résultat.",
+  "dialogue.student.blocked.frequent":
+    "Cinquième rappel : la leçon réclame toujours votre attention.",
+  "dialogue.student.blocked.standard.1": "Le cours est toujours en cours.",
+  "dialogue.student.blocked.standard.2": "Revenez au travail qui vous attend.",
+  "dialogue.student.override.granted": "Exception notée pour cet onglet.",
+  "dialogue.student.warning.morning": "Gardez la page du matin dégagée.",
+  "dialogue.student.warning.standard":
+    "Vos minutes libres sont presque épuisées.",
+  "dialogue.student.work.ended": "Plage de travail terminée. Beau travail.",
   "error.storageUnavailable":
     "Les données locales sont temporairement indisponibles",
   "nav.activity": "Activité",
