@@ -5,3 +5,4 @@ export * from "./provider-auth";
 export * from "./provider-http";
 export * from "./github-provider";
 export * from "./jira-provider";
+export * from "./linear-provider";
