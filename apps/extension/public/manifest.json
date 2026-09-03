@@ -3,6 +3,7 @@
   "name": "Productivity Police",
   "version": "0.0.0",
   "description": "Enforce the focus rules you choose for yourself.",
+  "permissions": ["storage"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
