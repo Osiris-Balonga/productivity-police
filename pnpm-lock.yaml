@@ -47,6 +47,9 @@ importers:
       '@productivity-police/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@productivity-police/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@productivity-police/storage':
         specifier: workspace:*
         version: link:../../packages/storage

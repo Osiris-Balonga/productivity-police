@@ -36,7 +36,7 @@ async function render(
 
   const topbar = document.createElement("header");
   topbar.className = "topbar";
-  topbar.innerHTML = `<span class="brand">Productivity Police</span><nav class="nav" aria-label="Primary"><a href="#dashboard">${translate(locale, "nav.dashboard")}</a><a href="#activity">${translate(locale, "nav.activity")}</a><a href="#settings" aria-current="page">${translate(locale, "nav.settings")}</a></nav>`;
+  topbar.innerHTML = `<span class="brand">Productivity Police</span><nav class="nav" aria-label="Primary"><a href="#dashboard">${translate(locale, "nav.dashboard")}</a><a href="#activity">${translate(locale, "nav.activity")}</a><a href="#integrations">${translate(locale, "nav.integrations")}</a><a href="#settings" aria-current="page">${translate(locale, "nav.settings")}</a></nav>`;
 
   const main = document.createElement("main");
   const heading = document.createElement("header");
