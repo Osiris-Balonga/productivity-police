@@ -282,6 +282,144 @@ test("E2E-01 shows the blocker immediately for an exhausted blacklisted site", a
   );
 });
 
+test("UI-01 shows BREAK in the popup without consuming allowance", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  const now = new Date();
+  const minute = now.getHours() * 60 + now.getMinutes();
+  test.skip(
+    minute < 2 || minute > 1437,
+    "The schedule model cannot surround the first or final two minutes of a day",
+  );
+  const toTime = (value: number): string =>
+    `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+
+  await worker.evaluate(
+    async ({ firstEnd, secondStart }) => {
+      const weekdays = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ];
+      const localDate = new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+      await chrome.storage.local.set({
+        productivityPolice: {
+          schemaVersion: 1,
+          settings: {
+            enabled: true,
+            locale: "en",
+            universe: "student",
+            dailyAllowanceMinutes: 10,
+            schedule: {
+              days: weekdays.map((weekday) => ({
+                weekday,
+                enabled: true,
+                periods: [
+                  { start: "00:00", end: firstEnd },
+                  { start: secondStart, end: "23:59" },
+                ],
+              })),
+            },
+          },
+          websiteRules: [],
+          usageByDate: {
+            [localDate]: {
+              localDate,
+              usedSeconds: 180,
+              bySiteSeconds: { video: 180 },
+              warningTriggered: false,
+              exhaustedTriggered: false,
+            },
+          },
+        },
+      });
+    },
+    { firstEnd: toTime(minute), secondStart: toTime(minute + 1) },
+  );
+
+  const extensionId = new URL(worker.url()).host;
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup/index.html`);
+  await expect(popup.getByText("Break", { exact: true })).toBeVisible();
+  const usageBefore = await readTotalUsage(worker);
+  await popup.waitForTimeout(2_000);
+  expect(await readTotalUsage(worker)).toBe(usageBefore);
+});
+
+test("UI-03 rerenders blocker, dashboard, and popup after a locale change", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  await configureBlockedSite("fr", "pro");
+  const extensionId = new URL(worker.url()).host;
+  const blockedTab = await context.newPage();
+  const dashboard = await context.newPage();
+  const popup = await context.newPage();
+  await blockedTab.goto(`http://127.0.0.1:${String(port)}/locale-change`);
+  await dashboard.goto(
+    `chrome-extension://${extensionId}/dashboard/index.html`,
+  );
+  await popup.goto(`chrome-extension://${extensionId}/popup/index.html`);
+
+  await expect(blockedTab.getByRole("alertdialog")).toContainText(
+    "Quota de distraction épuisé",
+  );
+  await expect(
+    dashboard.getByRole("heading", {
+      name: "La concentration du jour, clairement mesurée",
+    }),
+  ).toBeVisible();
+  await expect(
+    popup.getByRole("button", { name: "Ouvrir le tableau de bord" }),
+  ).toBeVisible();
+  await expect(popup.locator(".popup-shell")).toHaveAttribute(
+    "data-universe",
+    "pro",
+  );
+
+  await worker.evaluate(async () => {
+    const values = await chrome.storage.local.get("productivityPolice");
+    const envelope = values.productivityPolice as {
+      settings: { locale: string; universe: string };
+    };
+    envelope.settings.locale = "en";
+    envelope.settings.universe = "student";
+    await chrome.storage.local.set({ productivityPolice: envelope });
+  });
+
+  await expect(blockedTab.getByRole("alertdialog")).toContainText(
+    "Distraction allowance exhausted",
+  );
+  await expect(
+    dashboard.getByRole("heading", {
+      name: "Today’s focus, clearly measured",
+    }),
+  ).toBeVisible();
+  await expect(
+    popup.getByRole("button", { name: "Open dashboard" }),
+  ).toBeVisible();
+  await expect(popup.locator(".popup-shell")).toHaveAttribute(
+    "data-universe",
+    "student",
+  );
+  await expect(dashboard.locator(".app-shell")).toHaveAttribute(
+    "data-universe",
+    "student",
+  );
+  await expect(
+    blockedTab.locator("#productivity-police-surface-host"),
+  ).toHaveAttribute("data-productivity-police-universe", "student");
+});
+
 test("E2E-02 completes an override in the current tab", async () => {
   await configureBlockedSite();
   const overriddenTab = await openAndGrantOverride("override-current");
@@ -345,53 +483,60 @@ test("E2E-08 persists an override through worker suspension and expires it off-s
   await expect.poll(() => readOverrideCount(worker)).toBe(0);
 });
 
-async function configureBlockedSite(): Promise<void> {
-  await worker.evaluate(async () => {
-    const weekdays = [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ];
-    await chrome.storage.local.set({
-      productivityPolice: {
-        schemaVersion: 1,
-        settings: {
-          enabled: true,
-          locale: "en",
-          dailyAllowanceMinutes: 0,
-          schedule: {
-            days: weekdays.map((weekday) => ({
-              weekday,
-              enabled: true,
-              periods: [{ start: "00:00", end: "23:59" }],
-            })),
+async function configureBlockedSite(
+  locale: "fr" | "en" = "en",
+  universe: "student" | "pro" = "student",
+): Promise<void> {
+  await worker.evaluate(
+    async ({ locale, universe }) => {
+      const weekdays = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ];
+      await chrome.storage.local.set({
+        productivityPolice: {
+          schemaVersion: 1,
+          settings: {
+            enabled: true,
+            locale,
+            universe,
+            dailyAllowanceMinutes: 0,
+            schedule: {
+              days: weekdays.map((weekday) => ({
+                weekday,
+                enabled: true,
+                periods: [{ start: "00:00", end: "23:59" }],
+              })),
+            },
           },
+          websiteRules: [
+            {
+              id: "override-site",
+              name: "Override Site",
+              domain: "127.0.0.1",
+              list: "blacklist",
+              createdAt: "2026-09-03T00:00:00.000Z",
+            },
+            {
+              id: "override-other-site",
+              name: "Other Override Site",
+              domain: "localhost",
+              list: "blacklist",
+              createdAt: "2026-09-03T00:00:00.000Z",
+            },
+          ],
+          usageByDate: {},
+          activity: [],
         },
-        websiteRules: [
-          {
-            id: "override-site",
-            name: "Override Site",
-            domain: "127.0.0.1",
-            list: "blacklist",
-            createdAt: "2026-09-03T00:00:00.000Z",
-          },
-          {
-            id: "override-other-site",
-            name: "Other Override Site",
-            domain: "localhost",
-            list: "blacklist",
-            createdAt: "2026-09-03T00:00:00.000Z",
-          },
-        ],
-        usageByDate: {},
-        activity: [],
-      },
-    });
-  });
+      });
+    },
+    { locale, universe },
+  );
 }
 
 async function openAndGrantOverride(path: string) {

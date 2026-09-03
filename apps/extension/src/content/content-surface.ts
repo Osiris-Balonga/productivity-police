@@ -1,10 +1,13 @@
+import type { Universe } from "@productivity-police/domain";
 import { translate, type SupportedLocale } from "@productivity-police/i18n";
+import { getUniverseTheme } from "@productivity-police/ui";
 
 export type ContentSurfaceAction = "ALLOW" | "TRACK" | "WARN" | "BLOCK";
 
 export interface ContentSurfaceInput {
   action: ContentSurfaceAction;
   locale: SupportedLocale;
+  universe: Universe;
   siteId?: string | undefined;
   grantOverride?: ((justification: string) => Promise<boolean>) | undefined;
 }
@@ -25,6 +28,7 @@ export function createContentSurfaceKey(input: ContentSurfaceInput): string {
   return JSON.stringify([
     input.action,
     input.locale,
+    input.universe,
     input.siteId ?? null,
     input.grantOverride !== undefined,
   ]);
@@ -76,6 +80,14 @@ export function renderContentSurface(
   host.id = HOST_ID;
   host.dataset.productivityPoliceSurface = model.kind;
   host.dataset.productivityPoliceSurfaceKey = surfaceKey;
+  host.dataset.productivityPoliceUniverse = input.universe;
+  const theme = getUniverseTheme(input.universe);
+  host.style.setProperty("--pp-font", theme.fontFamily);
+  host.style.setProperty("--pp-bg", theme.tokens.surface);
+  host.style.setProperty("--pp-ink", theme.tokens.ink);
+  host.style.setProperty("--pp-muted", theme.tokens.muted);
+  host.style.setProperty("--pp-block", theme.tokens.blocked);
+  host.style.setProperty("--pp-warning", theme.tokens.warning);
   const shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent = styles;
@@ -240,7 +252,7 @@ const styles = `
     --pp-warning: oklch(0.82 0.15 82);
     all: initial;
     color: var(--pp-ink);
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--pp-font);
     position: fixed;
     z-index: 2147483646;
   }

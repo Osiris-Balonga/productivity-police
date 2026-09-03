@@ -184,6 +184,7 @@ export function startDistractionRuntime(): void {
         usedSeconds: dailyUsage.usedSeconds,
         allowanceSeconds,
         locale: settings.locale === "fr" ? "fr" : "en",
+        universe: settings.universe === "pro" ? "pro" : "student",
         overrides: validOverrides,
       },
       openTabs,

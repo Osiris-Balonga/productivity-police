@@ -5,6 +5,7 @@ import {
   type AccessDecision,
   type ScheduleState,
   type TabOverride,
+  type Universe,
   type WebsiteRuleSet,
 } from "@productivity-police/domain";
 import type { SupportedLocale } from "@productivity-police/i18n";
@@ -21,6 +22,7 @@ export interface EnforcementSnapshot {
   usedSeconds: number;
   allowanceSeconds: number;
   locale: SupportedLocale;
+  universe: Universe;
   overrides?: readonly TabOverride[];
 }
 
@@ -28,6 +30,7 @@ export interface EnforcementDecisionMessage {
   type: "ENFORCEMENT_DECISION";
   decision: Readonly<AccessDecision>;
   locale: SupportedLocale;
+  universe: Universe;
   siteId: string | undefined;
 }
 
@@ -76,6 +79,7 @@ export async function reevaluateOpenTabs(
         type: "ENFORCEMENT_DECISION",
         decision,
         locale: snapshot.locale,
+        universe: snapshot.universe,
         siteId: matchedRule?.id,
       });
     }),

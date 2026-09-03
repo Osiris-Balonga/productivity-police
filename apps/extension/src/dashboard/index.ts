@@ -33,5 +33,10 @@ if (root !== null) {
   };
 
   window.addEventListener("hashchange", render);
+  chrome.storage.onChanged.addListener((_changes, areaName) => {
+    if (areaName === "local") {
+      render();
+    }
+  });
   render();
 }

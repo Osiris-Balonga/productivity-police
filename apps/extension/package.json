@@ -10,6 +10,6 @@
     "@productivity-police/ui": "workspace:*"
   },
   "scripts": {
-    "build": "vite build --mode runtime && vite build --mode pages && node ../../tooling/validate-manifest.mjs"
+    "build": "vite build --mode background && vite build --mode content && vite build --mode pages && node ../../tooling/validate-manifest.mjs"
   }
 }
