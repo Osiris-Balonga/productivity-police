@@ -78,6 +78,9 @@ export function selectDialogue(
     temporalTier.find(
       (candidate) => !context.recentVariantIds.includes(candidate.variantId),
     ) ?? temporalTier[0];
+  if (selected === undefined) {
+    throw new RangeError("No compatible dialogue variant");
+  }
 
   return Object.freeze({
     variantId: selected.variantId,
