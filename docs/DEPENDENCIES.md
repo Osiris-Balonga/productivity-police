@@ -7,6 +7,7 @@ All production and development dependencies are pinned exactly in the lockfile a
 | TypeScript                                | Static type checking for every workspace | Apache-2.0 | Development only                           |
 | Vite                                      | Build the Manifest V3 extension entries  | MIT        | Build tool only; emits application modules |
 | Vitest                                    | Unit and integration test runner         | MIT        | Development only                           |
+| Playwright Test                           | Chromium extension E2E harness           | Apache-2.0 | Development only; browsers are not bundled |
 | ESLint, `@eslint/js`, `typescript-eslint` | Type-aware source analysis               | MIT        | Development only                           |
 | Prettier                                  | Deterministic formatting checks          | MIT        | Development only                           |
 | `@types/chrome`                           | Compile-time Chrome extension contracts  | MIT        | Types only                                 |

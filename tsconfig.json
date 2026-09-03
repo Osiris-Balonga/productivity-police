@@ -9,6 +9,6 @@
     "packages/**/*.ts",
     "tests/**/*.ts",
     "tooling/**/*.ts",
-    "vitest.config.ts"
+    "*.config.ts"
   ]
 }
