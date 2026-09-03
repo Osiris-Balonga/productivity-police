@@ -514,9 +514,8 @@ test("E2E-09 materializes a missed weekly report once across worker restarts", a
       "sunday",
     ];
     const date = new Date();
-    date.setUTCDate(date.getUTCDate() - 14);
     const day = date.getUTCDay();
-    date.setUTCDate(date.getUTCDate() - ((day + 6) % 7));
+    date.setUTCDate(date.getUTCDate() - ((day + 6) % 7) - 7);
     const localDate = date.toISOString().slice(0, 10);
     await chrome.storage.local.set({
       productivityPolice: {
