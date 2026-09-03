@@ -58,7 +58,11 @@ importers:
 
   packages/i18n: {}
 
-  packages/integrations: {}
+  packages/integrations:
+    dependencies:
+      '@productivity-police/storage':
+        specifier: workspace:*
+        version: link:../storage
 
   packages/shared: {}
 
