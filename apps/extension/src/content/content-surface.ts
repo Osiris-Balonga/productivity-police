@@ -1,10 +1,4 @@
 import { translate, type SupportedLocale } from "@productivity-police/i18n";
-import {
-  confirmOverrideRequest,
-  startOverrideRequest,
-  submitOverrideRequest,
-  type OverrideRequest,
-} from "@productivity-police/domain";
 
 export type ContentSurfaceAction = "ALLOW" | "TRACK" | "WARN" | "BLOCK";
 
@@ -24,6 +18,8 @@ export interface ContentSurfaceModel {
 }
 
 const HOST_ID = "productivity-police-surface-host";
+type OverrideUiStage =
+  "FIRST_CONFIRMATION" | "SECOND_CONFIRMATION" | "JUSTIFICATION_REQUIRED";
 
 export function createContentSurfaceModel(
   input: ContentSurfaceInput,
@@ -115,28 +111,25 @@ function appendOverrideControls(
 ): void {
   const controls = document.createElement("div");
   controls.className = "override-controls";
-  let request: Readonly<OverrideRequest> | undefined;
+  let stage: OverrideUiStage | undefined;
 
   const renderStage = (): void => {
     controls.replaceChildren();
-    if (request === undefined) {
+    if (stage === undefined) {
       const requestButton = createButton(
         document,
         translate(input.locale, "override.request"),
       );
       requestButton.addEventListener("click", () => {
-        request = startOverrideRequest(0, input.siteId);
+        stage = "FIRST_CONFIRMATION";
         renderStage();
       });
       controls.append(requestButton);
       return;
     }
 
-    if (
-      request.stage === "FIRST_CONFIRMATION" ||
-      request.stage === "SECOND_CONFIRMATION"
-    ) {
-      const first = request.stage === "FIRST_CONFIRMATION";
+    if (stage === "FIRST_CONFIRMATION" || stage === "SECOND_CONFIRMATION") {
+      const first = stage === "FIRST_CONFIRMATION";
       const prompt = document.createElement("div");
       prompt.className = "override-prompt";
       const heading = document.createElement("h2");
@@ -157,17 +150,15 @@ function appendOverrideControls(
         ),
       );
       confirmButton.addEventListener("click", () => {
-        if (request !== undefined) {
-          request = confirmOverrideRequest(request);
-          renderStage();
-        }
+        stage = first ? "SECOND_CONFIRMATION" : "JUSTIFICATION_REQUIRED";
+        renderStage();
       });
       prompt.append(heading, explanation, confirmButton);
       controls.append(prompt);
       return;
     }
 
-    if (request.stage === "JUSTIFICATION_REQUIRED") {
+    {
       const form = document.createElement("form");
       form.className = "override-form";
       const justificationLabel = document.createElement("label");
@@ -194,29 +185,20 @@ function appendOverrideControls(
       form.append(justificationLabel, submitButton, error);
       form.addEventListener("submit", (event) => {
         event.preventDefault();
-        if (request === undefined) {
-          return;
-        }
-        const result = submitOverrideRequest(
-          request,
-          textarea.value,
-          new Date(),
-        );
-        if (result.override === undefined) {
+        const justification = textarea.value.trim();
+        if (justification.length === 0) {
           textarea.reportValidity();
           return;
         }
         submitButton.disabled = true;
-        void input
-          .grantOverride(result.override.justification)
-          .then((granted) => {
-            if (granted) {
-              document.getElementById(HOST_ID)?.remove();
-              return;
-            }
-            submitButton.disabled = false;
-            error.textContent = translate(input.locale, "override.error");
-          });
+        void input.grantOverride(justification).then((granted) => {
+          if (granted) {
+            document.getElementById(HOST_ID)?.remove();
+            return;
+          }
+          submitButton.disabled = false;
+          error.textContent = translate(input.locale, "override.error");
+        });
       });
       controls.append(form);
     }
