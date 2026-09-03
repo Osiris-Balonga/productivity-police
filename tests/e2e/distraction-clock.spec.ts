@@ -499,6 +499,64 @@ test("E2E-08 persists an override through worker suspension and expires it off-s
   await expect.poll(() => readOverrideCount(worker)).toBe(0);
 });
 
+test("E2E-09 materializes a missed weekly report once across worker restarts", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  await worker.evaluate(async () => {
+    const weekdays = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() - 14);
+    const day = date.getUTCDay();
+    date.setUTCDate(date.getUTCDate() - ((day + 6) % 7));
+    const localDate = date.toISOString().slice(0, 10);
+    await chrome.storage.local.set({
+      productivityPolice: {
+        schemaVersion: 1,
+        settings: {
+          enabled: true,
+          locale: "en",
+          universe: "student",
+          dailyAllowanceMinutes: 30,
+          schedule: {
+            days: weekdays.map((weekday) => ({
+              weekday,
+              enabled: weekday === "monday",
+              periods:
+                weekday === "monday" ? [{ start: "09:00", end: "17:00" }] : [],
+            })),
+          },
+        },
+        websiteRules: [],
+        usageByDate: {
+          [localDate]: {
+            localDate,
+            usedSeconds: 120,
+            bySiteSeconds: { video: 120 },
+            warningTriggered: false,
+            exhaustedTriggered: false,
+          },
+        },
+        activity: [],
+        reports: [],
+      },
+    });
+  });
+
+  worker = await restartWorker(context, worker);
+  await expect.poll(() => readReportCount(worker)).toBe(1);
+  worker = await restartWorker(context, worker);
+  await expect.poll(() => readReportCount(worker)).toBe(1);
+});
+
 async function configureBlockedSite(
   locale: "fr" | "en" = "en",
   universe: "student" | "pro" = "student",
@@ -605,4 +663,23 @@ async function readUsage(background: Worker): Promise<StoredUsage> {
 
 async function readTotalUsage(background: Worker): Promise<number> {
   return (await readUsage(background)).usedSeconds;
+}
+
+async function restartWorker(
+  browserContext: BrowserContext,
+  background: Worker,
+): Promise<Worker> {
+  const restarted = browserContext.waitForEvent("serviceworker");
+  await background.evaluate(() => {
+    chrome.runtime.reload();
+  });
+  return restarted;
+}
+
+async function readReportCount(background: Worker): Promise<number> {
+  return background.evaluate(async () => {
+    const values = await chrome.storage.local.get("productivityPolice");
+    const envelope = values.productivityPolice as { reports?: unknown[] };
+    return envelope.reports?.length ?? 0;
+  });
 }
