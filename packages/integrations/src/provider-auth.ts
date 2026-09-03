@@ -9,8 +9,8 @@ import {
 
 export const minimumReadScopes = Object.freeze({
   github: Object.freeze(["issues:read"]),
-  jira: Object.freeze(["read:jira-work", "read:jira-user", "offline_access"]),
-  linear: Object.freeze(["read", "offline_access"]),
+  jira: Object.freeze(["read:jira-work", "offline_access"]),
+  linear: Object.freeze(["read"]),
 }) satisfies Readonly<Record<ProviderId, readonly string[]>>;
 
 export interface IntegrationCredential {
