@@ -1,0 +1,16 @@
+{
+  "name": "@productivity-police/reporting-export",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@productivity-police/domain": "workspace:*",
+    "@react-pdf/renderer": "4.9.0",
+    "react": "19.2.8",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18"
+  }
+}
