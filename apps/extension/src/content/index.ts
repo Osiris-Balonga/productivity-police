@@ -1,3 +1,4 @@
+import type { Universe } from "@productivity-police/domain";
 import type { SupportedLocale } from "@productivity-police/i18n";
 
 import { renderContentSurface } from "./content-surface";
@@ -8,6 +9,7 @@ interface EnforcementDecisionMessage {
     action: "ALLOW" | "TRACK" | "WARN" | "BLOCK";
   };
   locale: SupportedLocale;
+  universe: Universe;
   siteId: string | undefined;
 }
 
@@ -27,6 +29,7 @@ function isEnforcementDecisionMessage(
       String((decision as Record<string, unknown>).action),
     ) &&
     (candidate.locale === "en" || candidate.locale === "fr") &&
+    (candidate.universe === "student" || candidate.universe === "pro") &&
     (candidate.siteId === undefined || typeof candidate.siteId === "string")
   );
 }
@@ -36,6 +39,7 @@ chrome.runtime.onMessage.addListener((message: unknown) => {
     renderContentSurface(document, {
       action: message.decision.action,
       locale: message.locale,
+      universe: message.universe,
       siteId: message.siteId,
       grantOverride: async (justification) => {
         const response: unknown = await chrome.runtime.sendMessage({

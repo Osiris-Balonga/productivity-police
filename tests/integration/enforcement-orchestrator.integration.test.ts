@@ -30,6 +30,7 @@ describe("Chrome enforcement orchestration", () => {
         usedSeconds: 600,
         allowanceSeconds: 600,
         locale: "en",
+        universe: "student",
       },
       [{ id: 7, url: "https://video.test/watch" }],
       (tabId, message) => {
@@ -48,6 +49,7 @@ describe("Chrome enforcement orchestration", () => {
             reason: "ALLOWANCE_EXHAUSTED",
           },
           locale: "en",
+          universe: "student",
           siteId: "video-site",
         },
       },

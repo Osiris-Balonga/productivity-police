@@ -11,6 +11,7 @@ describe("enforcement content surfaces", () => {
       createContentSurfaceModel({
         action: "WARN",
         locale: "en",
+        universe: "student",
       }),
     ).toEqual({
       kind: "warning",
@@ -26,6 +27,7 @@ describe("enforcement content surfaces", () => {
       createContentSurfaceModel({
         action: "BLOCK",
         locale: "en",
+        universe: "student",
       }),
     ).toEqual({
       kind: "blocker",
@@ -35,10 +37,18 @@ describe("enforcement content surfaces", () => {
       body: "This site is blocked during your work period.",
     });
     expect(
-      createContentSurfaceModel({ action: "ALLOW", locale: "en" }),
+      createContentSurfaceModel({
+        action: "ALLOW",
+        locale: "en",
+        universe: "student",
+      }),
     ).toBeNull();
     expect(
-      createContentSurfaceModel({ action: "TRACK", locale: "en" }),
+      createContentSurfaceModel({
+        action: "TRACK",
+        locale: "en",
+        universe: "student",
+      }),
     ).toBeNull();
   });
 
@@ -50,6 +60,7 @@ describe("enforcement content surfaces", () => {
       createContentSurfaceKey({
         action: "BLOCK",
         locale: "en",
+        universe: "student",
         siteId: "site-1",
         grantOverride: firstGrant,
       }),
@@ -57,6 +68,7 @@ describe("enforcement content surfaces", () => {
       createContentSurfaceKey({
         action: "BLOCK",
         locale: "en",
+        universe: "student",
         siteId: "site-1",
         grantOverride: replacementGrant,
       }),
@@ -65,13 +77,30 @@ describe("enforcement content surfaces", () => {
       createContentSurfaceKey({
         action: "BLOCK",
         locale: "en",
+        universe: "student",
         siteId: "site-1",
       }),
     ).not.toBe(
       createContentSurfaceKey({
         action: "BLOCK",
         locale: "en",
+        universe: "student",
         siteId: "site-2",
+      }),
+    );
+    expect(
+      createContentSurfaceKey({
+        action: "BLOCK",
+        locale: "en",
+        universe: "student",
+        siteId: "site-1",
+      }),
+    ).not.toBe(
+      createContentSurfaceKey({
+        action: "BLOCK",
+        locale: "en",
+        universe: "pro",
+        siteId: "site-1",
       }),
     );
   });
