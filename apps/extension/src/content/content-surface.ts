@@ -62,7 +62,6 @@ export function renderContentSurface(
 
   const surface = document.createElement("section");
   surface.className = `surface ${model.kind}`;
-  surface.dataset.productivityPoliceSurface = model.kind;
   surface.setAttribute("role", model.role);
   if (model.blocking) {
     surface.setAttribute("aria-modal", "true");
