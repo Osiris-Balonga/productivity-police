@@ -29,6 +29,7 @@ describe("Chrome enforcement orchestration", () => {
         },
         usedSeconds: 600,
         allowanceSeconds: 600,
+        locale: "en",
       },
       [{ id: 7, url: "https://video.test/watch" }],
       (tabId, message) => {
@@ -46,6 +47,7 @@ describe("Chrome enforcement orchestration", () => {
             action: "BLOCK",
             reason: "ALLOWANCE_EXHAUSTED",
           },
+          locale: "en",
         },
       },
     ]);

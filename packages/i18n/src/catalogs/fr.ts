@@ -2,6 +2,10 @@ import type { CatalogKey } from "./en";
 
 export const fr = {
   "access.allowanceExhausted": "Votre quota de distraction est épuisé",
+  "access.blockedBody": "Ce site est bloqué pendant votre plage de travail.",
+  "access.blockedTitle": "Quota de distraction épuisé",
+  "access.warningBody": "Reprenez votre travail avant que l’accès soit bloqué.",
+  "access.warningTitle": "Quota de distraction presque épuisé",
   "action.activate": "Activer Productivity Police",
   "app.name": "Productivity Police",
   "error.storageUnavailable":

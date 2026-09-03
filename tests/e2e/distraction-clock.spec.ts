@@ -227,6 +227,61 @@ test("E2E-06 applies a work-period decision to an open tab without reload", asyn
   ).toBe(navigationStart);
 });
 
+test("E2E-01 shows the blocker immediately for an exhausted blacklisted site", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+
+  await worker.evaluate(async () => {
+    const weekdays = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+    await chrome.storage.local.set({
+      productivityPolice: {
+        schemaVersion: 1,
+        settings: {
+          enabled: true,
+          locale: "en",
+          dailyAllowanceMinutes: 0,
+          schedule: {
+            days: weekdays.map((weekday) => ({
+              weekday,
+              enabled: true,
+              periods: [{ start: "00:00", end: "23:59" }],
+            })),
+          },
+        },
+        websiteRules: [
+          {
+            id: "blocked-site",
+            name: "Blocked Site",
+            domain: "127.0.0.1",
+            list: "blacklist",
+            createdAt: "2026-09-03T00:00:00.000Z",
+          },
+        ],
+        usageByDate: {},
+      },
+    });
+  });
+
+  const blockedTab = await context.newPage();
+  await blockedTab.goto(`http://127.0.0.1:${String(port)}/blocked`);
+
+  await expect(
+    blockedTab.locator('[data-productivity-police-surface="blocker"]'),
+  ).toBeVisible();
+  await expect(blockedTab.getByRole("alertdialog")).toContainText(
+    "Distraction allowance exhausted",
+  );
+});
+
 async function readActiveSite(background: Worker): Promise<string | undefined> {
   return background.evaluate(async () => {
     const values = await chrome.storage.session.get("distractionClockState");

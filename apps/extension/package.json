@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@productivity-police/domain": "workspace:*",
+    "@productivity-police/i18n": "workspace:*",
     "@productivity-police/storage": "workspace:*"
   },
   "scripts": {
