@@ -1,5 +1,6 @@
 import type { Universe } from "@productivity-police/domain";
 import type { SupportedLocale } from "@productivity-police/i18n";
+import type { BlockTaskGroup } from "@productivity-police/integrations";
 
 import { renderContentSurface } from "./content-surface";
 
@@ -11,6 +12,7 @@ interface EnforcementDecisionMessage {
   locale: SupportedLocale;
   universe: Universe;
   siteId: string | undefined;
+  taskGroups: readonly Readonly<BlockTaskGroup>[];
 }
 
 function isEnforcementDecisionMessage(
@@ -30,7 +32,31 @@ function isEnforcementDecisionMessage(
     ) &&
     (candidate.locale === "en" || candidate.locale === "fr") &&
     (candidate.universe === "student" || candidate.universe === "pro") &&
-    (candidate.siteId === undefined || typeof candidate.siteId === "string")
+    (candidate.siteId === undefined || typeof candidate.siteId === "string") &&
+    isBlockTaskGroups(candidate.taskGroups)
+  );
+}
+
+function isBlockTaskGroups(value: unknown): value is readonly BlockTaskGroup[] {
+  return (
+    Array.isArray(value) &&
+    value.every((groupValue) => {
+      if (typeof groupValue !== "object" || groupValue === null) {
+        return false;
+      }
+      const group = groupValue as Record<string, unknown>;
+      const task = group.task;
+      return (
+        ["github", "jira", "linear"].includes(String(group.provider)) &&
+        typeof group.taskCount === "number" &&
+        Number.isInteger(group.taskCount) &&
+        group.taskCount > 0 &&
+        typeof task === "object" &&
+        task !== null &&
+        typeof (task as Record<string, unknown>).title === "string" &&
+        typeof (task as Record<string, unknown>).url === "string"
+      );
+    })
   );
 }
 
@@ -41,6 +67,7 @@ chrome.runtime.onMessage.addListener((message: unknown) => {
       locale: message.locale,
       universe: message.universe,
       siteId: message.siteId,
+      taskGroups: message.taskGroups,
       grantOverride: async (justification) => {
         const response: unknown = await chrome.runtime.sendMessage({
           type: "GRANT_OVERRIDE",
