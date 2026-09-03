@@ -1,8 +1,13 @@
+import type { SupportedLocale } from "@productivity-police/i18n";
+
+import { renderContentSurface } from "./content-surface";
+
 interface EnforcementDecisionMessage {
   type: "ENFORCEMENT_DECISION";
   decision: {
     action: "ALLOW" | "TRACK" | "WARN" | "BLOCK";
   };
+  locale: SupportedLocale;
 }
 
 function isEnforcementDecisionMessage(
@@ -19,13 +24,16 @@ function isEnforcementDecisionMessage(
     decision !== null &&
     ["ALLOW", "TRACK", "WARN", "BLOCK"].includes(
       String((decision as Record<string, unknown>).action),
-    )
+    ) &&
+    (candidate.locale === "en" || candidate.locale === "fr")
   );
 }
 
 chrome.runtime.onMessage.addListener((message: unknown) => {
   if (isEnforcementDecisionMessage(message)) {
-    document.documentElement.dataset.productivityPoliceDecision =
-      message.decision.action;
+    renderContentSurface(document, {
+      action: message.decision.action,
+      locale: message.locale,
+    });
   }
 });

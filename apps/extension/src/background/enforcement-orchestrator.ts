@@ -5,6 +5,7 @@ import {
   type ScheduleState,
   type WebsiteRuleSet,
 } from "@productivity-police/domain";
+import type { SupportedLocale } from "@productivity-police/i18n";
 
 export interface OpenTab {
   id?: number | undefined;
@@ -17,11 +18,13 @@ export interface EnforcementSnapshot {
   rules: WebsiteRuleSet;
   usedSeconds: number;
   allowanceSeconds: number;
+  locale: SupportedLocale;
 }
 
 export interface EnforcementDecisionMessage {
   type: "ENFORCEMENT_DECISION";
   decision: Readonly<AccessDecision>;
+  locale: SupportedLocale;
 }
 
 export type DecisionSender = (
@@ -64,6 +67,7 @@ export async function reevaluateOpenTabs(
       await sendDecision(tab.id, {
         type: "ENFORCEMENT_DECISION",
         decision,
+        locale: snapshot.locale,
       });
     }),
   );

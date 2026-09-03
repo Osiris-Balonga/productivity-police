@@ -156,6 +156,7 @@ export function startDistractionRuntime(): void {
         rules,
         usedSeconds: dailyUsage.usedSeconds,
         allowanceSeconds,
+        locale: settings.locale === "fr" ? "fr" : "en",
       },
       openTabs,
       async (tabId, message) => {
