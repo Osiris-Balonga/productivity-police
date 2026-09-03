@@ -1,0 +1,21 @@
+name: Bug report
+description: Report a reproducible problem in an implemented behavior.
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include extension version, browser version, locale, time zone, and synthetic site data. Do not share personal activity or credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: traceability
+    attributes:
+      label: Related PP ticket, TDD ID, and evidence
