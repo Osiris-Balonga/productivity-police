@@ -7,6 +7,7 @@
   "dependencies": {
     "@productivity-police/domain": "workspace:*",
     "@react-pdf/renderer": "4.9.0",
+    "pdfjs-dist": "6.2.108",
     "react": "19.2.8",
     "zod": "3.25.76"
   },
