@@ -1,4 +1,5 @@
 export * from "./model";
+export * from "./activity";
 export * from "./migrations";
 export * from "./daily-usage";
 export * from "./repository";
