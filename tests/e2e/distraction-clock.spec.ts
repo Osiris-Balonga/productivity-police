@@ -551,9 +551,12 @@ test("E2E-09 materializes a missed weekly report once across worker restarts", a
     });
   });
 
-  worker = await restartWorker(context, worker);
+  const wakeTab = await context.newPage();
+  await suspendWorker(context, wakeTab);
+  await wakeTab.goto(`http://127.0.0.1:${String(port)}/report-recovery-one`);
   await expect.poll(() => readReportCount(worker)).toBe(1);
-  worker = await restartWorker(context, worker);
+  await suspendWorker(context, wakeTab);
+  await wakeTab.goto(`http://127.0.0.1:${String(port)}/report-recovery-two`);
   await expect.poll(() => readReportCount(worker)).toBe(1);
 });
 
@@ -665,15 +668,14 @@ async function readTotalUsage(background: Worker): Promise<number> {
   return (await readUsage(background)).usedSeconds;
 }
 
-async function restartWorker(
+async function suspendWorker(
   browserContext: BrowserContext,
-  background: Worker,
-): Promise<Worker> {
-  const restarted = browserContext.waitForEvent("serviceworker");
-  await background.evaluate(() => {
-    chrome.runtime.reload();
-  });
-  return restarted;
+  wakeTab: import("@playwright/test").Page,
+): Promise<void> {
+  const devtools = await browserContext.newCDPSession(wakeTab);
+  await devtools.send("ServiceWorker.enable");
+  await devtools.send("ServiceWorker.stopAllWorkers");
+  await devtools.detach();
 }
 
 async function readReportCount(background: Worker): Promise<number> {
