@@ -311,6 +311,40 @@ test("E2E-03 blocks a new tab after the overridden tab closes", async () => {
   ).toBeVisible();
 });
 
+test("E2E-08 persists an override through worker suspension and expires it off-site", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  await configureBlockedSite();
+  const overriddenTab = await openAndGrantOverride("override-worker-before");
+  await expect.poll(() => readOverrideCount(worker)).toBe(1);
+
+  const devtools = await context.newCDPSession(overriddenTab);
+  await devtools.send("ServiceWorker.enable");
+  await devtools.send("ServiceWorker.stopAllWorkers");
+
+  await overriddenTab.goto(
+    `http://127.0.0.1:${String(port)}/override-worker-after`,
+  );
+  await expect
+    .poll(() =>
+      overriddenTab.getAttribute("html", "data-productivity-police-decision"),
+    )
+    .toBe("ALLOW");
+  await expect(
+    overriddenTab.locator('[data-productivity-police-surface="blocker"]'),
+  ).toHaveCount(0);
+  await expect.poll(() => readOverrideCount(worker)).toBe(1);
+
+  await overriddenTab.goto(
+    `http://localhost:${String(port)}/override-worker-off-site`,
+  );
+  await expect(
+    overriddenTab.locator('[data-productivity-police-surface="blocker"]'),
+  ).toBeVisible();
+  await expect.poll(() => readOverrideCount(worker)).toBe(0);
+});
+
 async function configureBlockedSite(): Promise<void> {
   await worker.evaluate(async () => {
     const weekdays = [
@@ -345,6 +379,13 @@ async function configureBlockedSite(): Promise<void> {
             list: "blacklist",
             createdAt: "2026-09-03T00:00:00.000Z",
           },
+          {
+            id: "override-other-site",
+            name: "Other Override Site",
+            domain: "localhost",
+            list: "blacklist",
+            createdAt: "2026-09-03T00:00:00.000Z",
+          },
         ],
         usageByDate: {},
         activity: [],
@@ -375,6 +416,13 @@ async function readActiveSite(background: Worker): Promise<string | undefined> {
     const state = values.distractionClockState as
       { siteId?: string } | undefined;
     return state?.siteId;
+  });
+}
+
+async function readOverrideCount(background: Worker): Promise<number> {
+  return background.evaluate(async () => {
+    const values = await chrome.storage.session.get("tabOverrides");
+    return Array.isArray(values.tabOverrides) ? values.tabOverrides.length : 0;
   });
 }
 

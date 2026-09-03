@@ -7,6 +7,7 @@ export type OverrideStage =
 export interface TabOverride {
   readonly tabId: number;
   readonly siteId: string;
+  readonly canonicalDomain: string;
   readonly justification: string;
   readonly grantedAt: string;
 }
@@ -23,6 +24,7 @@ export interface OverrideRequest {
   readonly stage: OverrideStage;
   readonly tabId: number;
   readonly siteId: string;
+  readonly canonicalDomain: string;
   readonly override?: Readonly<TabOverride>;
   readonly activity?: Readonly<OverrideGrantedActivity>;
 }
@@ -30,8 +32,14 @@ export interface OverrideRequest {
 export function startOverrideRequest(
   tabId: number,
   siteId: string,
+  canonicalDomain: string,
 ): Readonly<OverrideRequest> {
-  return Object.freeze({ stage: "FIRST_CONFIRMATION", tabId, siteId });
+  return Object.freeze({
+    stage: "FIRST_CONFIRMATION",
+    tabId,
+    siteId,
+    canonicalDomain,
+  });
 }
 
 export function confirmOverrideRequest(
@@ -64,6 +72,7 @@ export function submitOverrideRequest(
   const override = Object.freeze({
     tabId: request.tabId,
     siteId: request.siteId,
+    canonicalDomain: request.canonicalDomain,
     justification: normalizedJustification,
     grantedAt: occurredAt,
   });

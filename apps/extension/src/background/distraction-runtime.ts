@@ -1,4 +1,5 @@
 import {
+  canonicalizeDomain,
   confirmOverrideRequest,
   evaluateWorkScheduleAt,
   getSystemTimeZoneContext,
@@ -24,7 +25,7 @@ import {
 } from "@productivity-police/storage";
 
 import { reevaluateOpenTabs } from "./enforcement-orchestrator";
-import { InMemoryTabOverrideRegistry } from "./tab-override-registry";
+import { SessionTabOverrideRegistry } from "./tab-override-registry";
 
 const CLOCK_KEY = "distractionClockState";
 const HEARTBEAT_ALARM = "distraction-heartbeat";
@@ -86,7 +87,7 @@ export function startDistractionRuntime(): void {
   const sessionArea = new ChromeStorageArea(chrome.storage.session);
   const storage = new VersionedStorageRepository(localArea);
   const usage = new DailyUsageRepository(storage);
-  const overrides = new InMemoryTabOverrideRegistry();
+  const overrides = new SessionTabOverrideRegistry(sessionArea);
   const clock = new SessionValueRepository(
     sessionArea,
     CLOCK_KEY,
@@ -112,6 +113,7 @@ export function startDistractionRuntime(): void {
     const schedule = settings.schedule;
     const activeTab = focusedWindow.tabs?.find((tab) => tab.active);
     const rules = readRuleSet(envelope.websiteRules);
+    const validOverrides = await overrides.reconcile(openTabs, rules);
     let matchedRule: WebsiteRule | undefined;
 
     if (activeTab?.url !== undefined) {
@@ -139,7 +141,9 @@ export function startDistractionRuntime(): void {
       overrideActive:
         activeTab?.id !== undefined && matchedRule?.id !== undefined
           ? isTabOverrideValid(
-              overrides.get(activeTab.id),
+              validOverrides.find(
+                (override) => override.tabId === activeTab.id,
+              ),
               activeTab.id,
               matchedRule.id,
             )
@@ -180,7 +184,7 @@ export function startDistractionRuntime(): void {
         usedSeconds: dailyUsage.usedSeconds,
         allowanceSeconds,
         locale: settings.locale === "fr" ? "fr" : "en",
-        overrides: overrides.list(),
+        overrides: validOverrides,
       },
       openTabs,
       async (tabId, message) => {
@@ -204,8 +208,20 @@ export function startDistractionRuntime(): void {
     queueReconciliation();
   });
   chrome.tabs.onRemoved.addListener((tabId) => {
-    overrides.remove(tabId);
-    queueReconciliation();
+    pending = pending
+      .then(async () => {
+        await overrides.remove(tabId);
+        await reconcile(false);
+      })
+      .catch(() => undefined);
+  });
+  chrome.tabs.onReplaced.addListener((_addedTabId, removedTabId) => {
+    pending = pending
+      .then(async () => {
+        await overrides.remove(removedTabId);
+        await reconcile(false);
+      })
+      .catch(() => undefined);
   });
   chrome.windows.onFocusChanged.addListener(() => {
     queueReconciliation();
@@ -229,7 +245,7 @@ export function startDistractionRuntime(): void {
       return false;
     }
 
-    void (async () => {
+    const grantRequest = pending.then(async () => {
       const tabId = sender.tab?.id;
       const url = sender.tab?.url;
       const envelope = await storage.read();
@@ -243,7 +259,9 @@ export function startDistractionRuntime(): void {
       }
 
       const request = confirmOverrideRequest(
-        confirmOverrideRequest(startOverrideRequest(tabId, rule.id)),
+        confirmOverrideRequest(
+          startOverrideRequest(tabId, rule.id, canonicalizeDomain(rule.domain)),
+        ),
       );
       const grant = submitOverrideRequest(
         request,
@@ -254,7 +272,7 @@ export function startDistractionRuntime(): void {
         return false;
       }
 
-      overrides.save(grant.override);
+      await overrides.save(grant.override);
       const activity: unknown[] = Array.isArray(envelope.activity)
         ? (envelope.activity as unknown[])
         : [];
@@ -274,7 +292,12 @@ export function startDistractionRuntime(): void {
       });
       queueReconciliation();
       return true;
-    })()
+    });
+    pending = grantRequest.then(
+      () => undefined,
+      () => undefined,
+    );
+    void grantRequest
       .then((granted) => {
         sendResponse({ granted });
       })
