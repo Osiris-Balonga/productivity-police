@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { createContentSurfaceModel } from "./content-surface";
+import {
+  createContentSurfaceKey,
+  createContentSurfaceModel,
+} from "./content-surface";
 
 describe("enforcement content surfaces", () => {
   it("ENF-06 renders WARN as a non-blocking status", () => {
@@ -37,5 +40,39 @@ describe("enforcement content surfaces", () => {
     expect(
       createContentSurfaceModel({ action: "TRACK", locale: "en" }),
     ).toBeNull();
+  });
+
+  it("keeps a stable identity while the same override surface is refreshed", () => {
+    const firstGrant = (): Promise<boolean> => Promise.resolve(true);
+    const replacementGrant = (): Promise<boolean> => Promise.resolve(false);
+
+    expect(
+      createContentSurfaceKey({
+        action: "BLOCK",
+        locale: "en",
+        siteId: "site-1",
+        grantOverride: firstGrant,
+      }),
+    ).toBe(
+      createContentSurfaceKey({
+        action: "BLOCK",
+        locale: "en",
+        siteId: "site-1",
+        grantOverride: replacementGrant,
+      }),
+    );
+    expect(
+      createContentSurfaceKey({
+        action: "BLOCK",
+        locale: "en",
+        siteId: "site-1",
+      }),
+    ).not.toBe(
+      createContentSurfaceKey({
+        action: "BLOCK",
+        locale: "en",
+        siteId: "site-2",
+      }),
+    );
   });
 });

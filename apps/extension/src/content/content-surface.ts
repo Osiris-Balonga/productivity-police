@@ -21,6 +21,15 @@ const HOST_ID = "productivity-police-surface-host";
 type OverrideUiStage =
   "FIRST_CONFIRMATION" | "SECOND_CONFIRMATION" | "JUSTIFICATION_REQUIRED";
 
+export function createContentSurfaceKey(input: ContentSurfaceInput): string {
+  return JSON.stringify([
+    input.action,
+    input.locale,
+    input.siteId ?? null,
+    input.grantOverride !== undefined,
+  ]);
+}
+
 export function createContentSurfaceModel(
   input: ContentSurfaceInput,
 ): Readonly<ContentSurfaceModel> | null {
@@ -49,8 +58,14 @@ export function renderContentSurface(
   document: Document,
   input: ContentSurfaceInput,
 ): void {
-  document.getElementById(HOST_ID)?.remove();
   document.documentElement.dataset.productivityPoliceDecision = input.action;
+
+  const surfaceKey = createContentSurfaceKey(input);
+  const existingHost = document.getElementById(HOST_ID);
+  if (existingHost?.dataset.productivityPoliceSurfaceKey === surfaceKey) {
+    return;
+  }
+  existingHost?.remove();
 
   const model = createContentSurfaceModel(input);
   if (model === null) {
@@ -60,6 +75,7 @@ export function renderContentSurface(
   const host = document.createElement("div");
   host.id = HOST_ID;
   host.dataset.productivityPoliceSurface = model.kind;
+  host.dataset.productivityPoliceSurfaceKey = surfaceKey;
   const shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent = styles;
