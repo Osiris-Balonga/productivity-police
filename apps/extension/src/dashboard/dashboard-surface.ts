@@ -128,7 +128,7 @@ function createShell(
       value,
     );
   }
-  shell.innerHTML = `<style>${settingsStyles}</style><header class="topbar"><span class="brand">Productivity Police</span><nav class="nav" aria-label="Primary"><a href="#dashboard"${route === "dashboard" ? ' aria-current="page"' : ""}>${translate(locale, "nav.dashboard")}</a><a href="#activity"${route === "activity" ? ' aria-current="page"' : ""}>${translate(locale, "nav.activity")}</a><a href="#settings">${translate(locale, "nav.settings")}</a></nav></header>`;
+  shell.innerHTML = `<style>${settingsStyles}</style><header class="topbar"><span class="brand">Productivity Police</span><nav class="nav" aria-label="Primary"><a href="#dashboard"${route === "dashboard" ? ' aria-current="page"' : ""}>${translate(locale, "nav.dashboard")}</a><a href="#activity"${route === "activity" ? ' aria-current="page"' : ""}>${translate(locale, "nav.activity")}</a><a href="#integrations">${translate(locale, "nav.integrations")}</a><a href="#settings">${translate(locale, "nav.settings")}</a></nav></header>`;
   return shell;
 }
 

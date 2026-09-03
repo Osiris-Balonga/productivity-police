@@ -420,6 +420,22 @@ test("UI-03 rerenders blocker, dashboard, and popup after a locale change", asyn
   ).toHaveAttribute("data-productivity-police-universe", "student");
 });
 
+test("INT-10 refreshes provider caches immediately from Integrations", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  await configureBlockedSite("en", "pro");
+  const extensionId = new URL(worker.url()).host;
+  const dashboard = await context.newPage();
+  await dashboard.goto(
+    `chrome-extension://${extensionId}/dashboard/index.html#integrations`,
+  );
+
+  await dashboard.getByRole("button", { name: "Refresh now" }).click();
+
+  await expect(dashboard.getByRole("status")).toHaveText("Refresh complete.");
+});
+
 test("E2E-02 completes an override in the current tab", async () => {
   await configureBlockedSite();
   const overriddenTab = await openAndGrantOverride("override-current");

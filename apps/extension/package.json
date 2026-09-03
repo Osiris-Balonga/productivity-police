@@ -6,6 +6,7 @@
   "dependencies": {
     "@productivity-police/domain": "workspace:*",
     "@productivity-police/i18n": "workspace:*",
+    "@productivity-police/integrations": "workspace:*",
     "@productivity-police/storage": "workspace:*",
     "@productivity-police/ui": "workspace:*"
   },

@@ -47,6 +47,17 @@ export const fr = {
   "dialogue.student.work.ended": "Plage de travail terminée. Beau travail.",
   "error.storageUnavailable":
     "Les données locales sont temporairement indisponibles",
+  "integrations.complete": "Actualisation terminée.",
+  "integrations.description":
+    "Le travail assigné reste disponible localement et s’actualise automatiquement toutes les cinq minutes.",
+  "integrations.failed":
+    "Échec de l’actualisation. Les tâches en cache restent disponibles.",
+  "integrations.refresh": "Actualiser maintenant",
+  "integrations.refreshing": "Actualisation…",
+  "integrations.syncDescription":
+    "Récupérez les dernières tâches assignées auprès de chaque service connecté.",
+  "integrations.syncTitle": "Synchronisation des services",
+  "integrations.title": "Votre travail connecté, toujours à jour",
   "nav.activity": "Activité",
   "nav.dashboard": "Tableau de bord",
   "nav.integrations": "Intégrations",

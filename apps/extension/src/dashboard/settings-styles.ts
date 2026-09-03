@@ -61,6 +61,11 @@ export const settingsStyles = `
   .activity-item p { margin: 0; }
   .activity-detail { color: var(--muted); font-size: .9rem; }
   .empty { color: var(--muted); padding: 28px 0; }
+  .integration-action { align-items: center; background: var(--surface); border-radius: 14px; box-shadow: 0 2px 8px color-mix(in oklch, var(--ink), transparent 92%); display: grid; gap: 16px 28px; grid-template-columns: minmax(0, 1fr) auto; padding: clamp(24px, 5vw, 40px); }
+  .integration-action h2 { font-size: 1.3rem; margin: 0 0 8px; text-wrap: balance; }
+  .integration-action p { color: var(--muted); line-height: 1.55; margin: 0; max-width: 65ch; text-wrap: pretty; }
+  .integration-action .feedback { grid-column: 1 / -1; }
+  button:disabled { cursor: wait; opacity: .62; }
   [data-universe=student] .quota-panel { box-shadow: 0 2px 0 var(--ink); }
   [data-universe=student] .status-chip { border: 1px solid var(--ink); }
   @media (max-width: 720px) {
@@ -70,6 +75,8 @@ export const settingsStyles = `
     .dashboard-layout { grid-template-columns: 1fr; }
     .day-row, .site-row, .period-row { align-items: stretch; grid-template-columns: 1fr; }
     .activity-item { grid-template-columns: 1fr; }
+    .integration-action { align-items: stretch; grid-template-columns: 1fr; }
+    .integration-action .primary { justify-self: start; }
   }
   @media (prefers-reduced-motion: reduce) { button { transition-duration: 0ms; } }
 `;

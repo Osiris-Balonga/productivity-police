@@ -41,6 +41,16 @@ export const en = {
   "dialogue.student.warning.standard": "Your free minutes are almost gone.",
   "dialogue.student.work.ended": "Work period complete. Well done.",
   "error.storageUnavailable": "Local data is temporarily unavailable",
+  "integrations.complete": "Refresh complete.",
+  "integrations.description":
+    "Assigned work stays available locally and refreshes automatically every five minutes.",
+  "integrations.failed": "Refresh failed. Cached tasks remain available.",
+  "integrations.refresh": "Refresh now",
+  "integrations.refreshing": "Refreshing…",
+  "integrations.syncDescription":
+    "Request the latest assigned tasks from every connected provider.",
+  "integrations.syncTitle": "Provider sync",
+  "integrations.title": "Your connected work, kept current",
   "nav.activity": "Activity",
   "nav.dashboard": "Dashboard",
   "nav.integrations": "Integrations",
