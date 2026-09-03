@@ -50,6 +50,9 @@ importers:
       '@productivity-police/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@productivity-police/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
 
   packages/domain: {}
 

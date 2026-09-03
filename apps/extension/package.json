@@ -6,9 +6,10 @@
   "dependencies": {
     "@productivity-police/domain": "workspace:*",
     "@productivity-police/i18n": "workspace:*",
-    "@productivity-police/storage": "workspace:*"
+    "@productivity-police/storage": "workspace:*",
+    "@productivity-police/ui": "workspace:*"
   },
   "scripts": {
-    "build": "vite build && node ../../tooling/validate-manifest.mjs"
+    "build": "vite build --mode runtime && vite build --mode pages && node ../../tooling/validate-manifest.mjs"
   }
 }
