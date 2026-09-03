@@ -46,6 +46,6 @@ export async function initializeFreshInstall(
 export function initializeChromeFreshInstall(): Promise<boolean> {
   return initializeFreshInstall(
     new ChromeStorageArea(chrome.storage.local),
-    chrome.i18n.getUILanguage(),
+    navigator.language,
   );
 }
