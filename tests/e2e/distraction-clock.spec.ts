@@ -282,6 +282,93 @@ test("E2E-01 shows the blocker immediately for an exhausted blacklisted site", a
   );
 });
 
+test("E2E-02 completes an override in the current tab", async () => {
+  await configureBlockedSite();
+  const overriddenTab = await openAndGrantOverride("override-current");
+
+  await expect(
+    overriddenTab.locator('[data-productivity-police-surface="blocker"]'),
+  ).toHaveCount(0);
+  await expect
+    .poll(() =>
+      overriddenTab.getAttribute("html", "data-productivity-police-decision"),
+    )
+    .toBe("ALLOW");
+});
+
+test("E2E-03 blocks a new tab after the overridden tab closes", async () => {
+  await configureBlockedSite();
+  const overriddenTab = await openAndGrantOverride("override-close");
+  await overriddenTab.close();
+
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  const reopenedTab = await context.newPage();
+  await reopenedTab.goto(`http://127.0.0.1:${String(port)}/override-reopened`);
+  await expect(
+    reopenedTab.locator('[data-productivity-police-surface="blocker"]'),
+  ).toBeVisible();
+});
+
+async function configureBlockedSite(): Promise<void> {
+  await worker.evaluate(async () => {
+    const weekdays = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+    await chrome.storage.local.set({
+      productivityPolice: {
+        schemaVersion: 1,
+        settings: {
+          enabled: true,
+          locale: "en",
+          dailyAllowanceMinutes: 0,
+          schedule: {
+            days: weekdays.map((weekday) => ({
+              weekday,
+              enabled: true,
+              periods: [{ start: "00:00", end: "23:59" }],
+            })),
+          },
+        },
+        websiteRules: [
+          {
+            id: "override-site",
+            name: "Override Site",
+            domain: "127.0.0.1",
+            list: "blacklist",
+            createdAt: "2026-09-03T00:00:00.000Z",
+          },
+        ],
+        usageByDate: {},
+        activity: [],
+      },
+    });
+  });
+}
+
+async function openAndGrantOverride(path: string) {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+  const page = await context.newPage();
+  await page.goto(`http://127.0.0.1:${String(port)}/${path}`);
+  await page.getByRole("button", { name: "Request override" }).click();
+  await page.getByRole("button", { name: "I understand" }).click();
+  await page.getByRole("button", { name: "Continue anyway" }).click();
+  await page
+    .getByRole("textbox", { name: "Why is this access necessary?" })
+    .fill("Required reference material");
+  await page.getByRole("button", { name: "Unlock this tab" }).click();
+  return page;
+}
+
 async function readActiveSite(background: Worker): Promise<string | undefined> {
   return background.evaluate(async () => {
     const values = await chrome.storage.session.get("distractionClockState");
