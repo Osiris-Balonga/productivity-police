@@ -39,7 +39,14 @@ importers:
         specifier: 5.0.0
         version: 5.0.0(@types/node@26.4.1)(vite@8.2.2(@types/node@26.4.1))
 
-  apps/extension: {}
+  apps/extension:
+    dependencies:
+      '@productivity-police/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@productivity-police/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
 
   packages/domain: {}
 

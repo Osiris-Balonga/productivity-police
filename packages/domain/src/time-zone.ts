@@ -59,3 +59,28 @@ export function evaluateWorkScheduleAt(
 ): ScheduleState {
   return evaluateWorkSchedule(schedule, toLocalScheduleTime(instant, context));
 }
+
+export function toLocalDate(
+  instant: Date,
+  context: TimeZoneContext = getSystemTimeZoneContext(),
+): string {
+  if (!Number.isFinite(instant.getTime())) {
+    throw new RangeError("A valid instant is required");
+  }
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: context.timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(instant);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (year === undefined || month === undefined || day === undefined) {
+    throw new RangeError("The instant could not be converted to a local date");
+  }
+
+  return `${year}-${month}-${day}`;
+}
