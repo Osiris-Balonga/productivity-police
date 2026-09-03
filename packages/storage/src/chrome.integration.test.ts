@@ -14,8 +14,9 @@ describe("Chrome storage adapter", () => {
       productivityPolice: { schemaVersion: CURRENT_SCHEMA_VERSION },
     });
     const set = vi.fn().mockResolvedValue(undefined);
+    const remove = vi.fn().mockResolvedValue(undefined);
     const repository = new VersionedStorageRepository(
-      new ChromeStorageArea({ get, set }),
+      new ChromeStorageArea({ get, set, remove }),
     );
 
     await expect(repository.read()).resolves.toEqual({

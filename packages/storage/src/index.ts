@@ -6,3 +6,4 @@ export * from "./repository";
 export * from "./session-value";
 export * from "./storage-area";
 export * from "./weekly-reports";
+export * from "./retention";
