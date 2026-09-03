@@ -2,6 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "composite": false,
+    "jsx": "react-jsx",
     "types": ["chrome", "node"]
   },
   "include": [
