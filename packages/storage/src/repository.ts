@@ -22,6 +22,7 @@ export class UnsupportedSchemaVersionError extends Error {
 export interface StorageRepository {
   read(): Promise<StorageEnvelope | undefined>;
   write(envelope: StorageEnvelope): Promise<void>;
+  clear(): Promise<void>;
 }
 
 export class VersionedStorageRepository implements StorageRepository {
@@ -54,5 +55,9 @@ export class VersionedStorageRepository implements StorageRepository {
     }
 
     await this.#area.set({ [this.#rootKey]: envelope });
+  }
+
+  clear(): Promise<void> {
+    return this.#area.remove(this.#rootKey);
   }
 }
