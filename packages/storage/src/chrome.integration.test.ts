@@ -35,7 +35,7 @@ describe("Chrome storage adapter", () => {
     });
   });
 
-  it("declares only the storage permission required by this adapter", async () => {
+  it("declares only the permissions required by implemented adapters", async () => {
     const manifest = JSON.parse(
       await readFile(
         new URL(
@@ -46,6 +46,7 @@ describe("Chrome storage adapter", () => {
       ),
     ) as { permissions?: string[] };
 
-    expect(manifest.permissions).toEqual(["storage"]);
+    expect(manifest.permissions).toEqual(["alarms", "idle", "storage", "tabs"]);
+    expect(manifest).not.toHaveProperty("host_permissions");
   });
 });

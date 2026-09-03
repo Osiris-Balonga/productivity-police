@@ -23,7 +23,7 @@
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit --pretty false",
     "validate": "pnpm quality && pnpm test",
-    "validate:full": "pnpm quality && pnpm test:unit && pnpm test:integration && pnpm build"
+    "validate:full": "pnpm quality && pnpm test:unit && pnpm test:integration && pnpm build && pnpm test:e2e"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

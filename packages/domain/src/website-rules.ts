@@ -53,17 +53,26 @@ export function resolveWebsiteRule(
   ruleSet: WebsiteRuleSet,
   domain: string,
 ): WebsiteRuleResolution {
+  const rule = matchWebsiteRule(ruleSet, domain);
+  return rule?.list === "whitelist"
+    ? "WHITELIST"
+    : rule?.list === "blacklist"
+      ? "BLACKLIST"
+      : "NEUTRAL";
+}
+
+export function matchWebsiteRule(
+  ruleSet: WebsiteRuleSet,
+  domain: string,
+): WebsiteRule | undefined {
   const matchingRules = ruleSet.rules.filter((rule) =>
     matchesCanonicalDomain(domain, rule.domain),
   );
 
-  if (matchingRules.some((rule) => rule.list === "whitelist")) {
-    return "WHITELIST";
+  const whitelistRule = matchingRules.find((rule) => rule.list === "whitelist");
+  if (whitelistRule !== undefined) {
+    return whitelistRule;
   }
 
-  if (matchingRules.some((rule) => rule.list === "blacklist")) {
-    return "BLACKLIST";
-  }
-
-  return "NEUTRAL";
+  return matchingRules.find((rule) => rule.list === "blacklist");
 }

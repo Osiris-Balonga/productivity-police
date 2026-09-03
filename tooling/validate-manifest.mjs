@@ -10,7 +10,7 @@ if (manifest.manifest_version !== 3) {
 }
 
 const permissions = manifest.permissions ?? [];
-const allowedPermissions = new Set(["storage"]);
+const allowedPermissions = new Set(["alarms", "idle", "storage", "tabs"]);
 const unexpectedPermissions = permissions.filter(
   (permission) => !allowedPermissions.has(permission),
 );
