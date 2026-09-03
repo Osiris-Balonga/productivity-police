@@ -31,6 +31,7 @@ describe("Chrome enforcement orchestration", () => {
         allowanceSeconds: 600,
         locale: "en",
         universe: "student",
+        taskGroups: [],
       },
       [{ id: 7, url: "https://video.test/watch" }],
       (tabId, message) => {
@@ -51,6 +52,7 @@ describe("Chrome enforcement orchestration", () => {
           locale: "en",
           universe: "student",
           siteId: "video-site",
+          taskGroups: [],
         },
       },
     ]);

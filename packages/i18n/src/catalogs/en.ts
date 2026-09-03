@@ -42,6 +42,8 @@ export const en = {
   "dialogue.student.work.ended": "Work period complete. Well done.",
   "error.storageUnavailable": "Local data is temporarily unavailable",
   "integrations.complete": "Refresh complete.",
+  "integrations.assignedCount": "{count} assigned",
+  "integrations.blockTasks": "Assigned work ({count})",
   "integrations.description":
     "Assigned work stays available locally and refreshes automatically every five minutes.",
   "integrations.failed": "Refresh failed. Cached tasks remain available.",

@@ -7,3 +7,4 @@ export * from "./github-provider";
 export * from "./jira-provider";
 export * from "./linear-provider";
 export * from "./provider-refresh-scheduler";
+export * from "./block-task-groups";

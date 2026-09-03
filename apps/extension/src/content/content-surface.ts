@@ -1,6 +1,7 @@
 import type { Universe } from "@productivity-police/domain";
 import { translate, type SupportedLocale } from "@productivity-police/i18n";
 import { getUniverseTheme } from "@productivity-police/ui";
+import type { BlockTaskGroup } from "@productivity-police/integrations";
 
 export type ContentSurfaceAction = "ALLOW" | "TRACK" | "WARN" | "BLOCK";
 
@@ -10,6 +11,7 @@ export interface ContentSurfaceInput {
   universe: Universe;
   siteId?: string | undefined;
   grantOverride?: ((justification: string) => Promise<boolean>) | undefined;
+  taskGroups?: readonly Readonly<BlockTaskGroup>[] | undefined;
 }
 
 export interface ContentSurfaceModel {
@@ -31,6 +33,7 @@ export function createContentSurfaceKey(input: ContentSurfaceInput): string {
     input.universe,
     input.siteId ?? null,
     input.grantOverride !== undefined,
+    input.taskGroups ?? [],
   ]);
 }
 
@@ -110,6 +113,9 @@ export function renderContentSurface(
   const body = document.createElement("p");
   body.textContent = model.body;
   surface.append(label, title, body);
+  if (model.kind === "blocker" && (input.taskGroups?.length ?? 0) > 0) {
+    appendBlockTasks(document, surface, input.locale, input.taskGroups ?? []);
+  }
   if (
     model.kind === "blocker" &&
     input.siteId !== undefined &&
@@ -127,6 +133,49 @@ export function renderContentSurface(
   if (model.blocking) {
     surface.focus({ preventScroll: true });
   }
+}
+
+function appendBlockTasks(
+  document: Document,
+  surface: HTMLElement,
+  locale: SupportedLocale,
+  groups: readonly Readonly<BlockTaskGroup>[],
+): void {
+  const section = document.createElement("section");
+  section.className = "block-tasks";
+  const heading = document.createElement("h2");
+  heading.textContent = translate(locale, "integrations.blockTasks", {
+    count: groups.reduce((total, group) => total + group.taskCount, 0),
+  });
+  const list = document.createElement("div");
+  list.className = "task-groups";
+  for (const group of groups) {
+    const provider = document.createElement("section");
+    provider.className = "task-group";
+    const providerHeading = document.createElement("h3");
+    const providerName =
+      group.provider === "github"
+        ? "GitHub"
+        : group.provider === "jira"
+          ? "Jira"
+          : "Linear";
+    providerHeading.textContent = `${providerName} · ${translate(locale, "integrations.assignedCount", { count: group.taskCount })}`;
+    const task = document.createElement("a");
+    task.href = group.task.url;
+    task.target = "_blank";
+    task.rel = "noopener noreferrer";
+    task.textContent = group.task.title;
+    provider.append(providerHeading, task);
+    if (group.task.priority !== undefined) {
+      const priority = document.createElement("span");
+      priority.className = "task-priority";
+      priority.textContent = group.task.priority;
+      provider.append(priority);
+    }
+    list.append(provider);
+  }
+  section.append(heading, list);
+  surface.append(section);
 }
 
 function appendOverrideControls(
@@ -283,6 +332,7 @@ const styles = `
     min-height: 100vh;
     padding: clamp(32px, 8vw, 112px);
     width: 100%;
+    overflow-y: auto;
   }
 
   .warning {
@@ -332,6 +382,52 @@ const styles = `
     margin-top: 32px;
     max-width: 520px;
     width: 100%;
+  }
+
+  .block-tasks {
+    margin-top: 28px;
+    max-width: 760px;
+    width: 100%;
+  }
+
+  .task-groups {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+  }
+
+  .task-group {
+    align-items: baseline;
+    border-top: 1px solid color-mix(in oklch, var(--pp-muted), transparent 68%);
+    display: grid;
+    gap: 6px 18px;
+    grid-template-columns: minmax(120px, .45fr) minmax(0, 1fr) auto;
+    padding: 13px 0;
+  }
+
+  .task-group h3 {
+    font-size: .8125rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .task-group a {
+    color: var(--pp-ink);
+    font-size: .9375rem;
+    font-weight: 650;
+    line-height: 1.4;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  .task-group a:focus-visible {
+    outline: 3px solid oklch(0.73 0.14 32.1);
+    outline-offset: 3px;
+  }
+
+  .task-priority {
+    color: var(--pp-muted);
+    font-size: .8125rem;
   }
 
   .override-prompt,
@@ -407,6 +503,7 @@ const styles = `
   @media (max-width: 520px) {
     :host:has(.warning) { inset: 16px 16px auto; }
     .blocker { padding: 28px; }
+    .task-group { align-items: start; grid-template-columns: 1fr; }
   }
 
   @media (prefers-reduced-motion: reduce) {

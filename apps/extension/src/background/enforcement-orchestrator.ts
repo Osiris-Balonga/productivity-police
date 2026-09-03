@@ -9,6 +9,7 @@ import {
   type WebsiteRuleSet,
 } from "@productivity-police/domain";
 import type { SupportedLocale } from "@productivity-police/i18n";
+import type { BlockTaskGroup } from "@productivity-police/integrations";
 
 export interface OpenTab {
   id?: number | undefined;
@@ -24,6 +25,7 @@ export interface EnforcementSnapshot {
   locale: SupportedLocale;
   universe: Universe;
   overrides?: readonly TabOverride[];
+  taskGroups: readonly Readonly<BlockTaskGroup>[];
 }
 
 export interface EnforcementDecisionMessage {
@@ -32,6 +34,7 @@ export interface EnforcementDecisionMessage {
   locale: SupportedLocale;
   universe: Universe;
   siteId: string | undefined;
+  taskGroups: readonly Readonly<BlockTaskGroup>[];
 }
 
 export type DecisionSender = (
@@ -81,6 +84,7 @@ export async function reevaluateOpenTabs(
         locale: snapshot.locale,
         universe: snapshot.universe,
         siteId: matchedRule?.id,
+        taskGroups: snapshot.taskGroups,
       });
     }),
   );

@@ -48,6 +48,8 @@ export const fr = {
   "error.storageUnavailable":
     "Les données locales sont temporairement indisponibles",
   "integrations.complete": "Actualisation terminée.",
+  "integrations.assignedCount": "{count} assignée(s)",
+  "integrations.blockTasks": "Travail assigné ({count})",
   "integrations.description":
     "Le travail assigné reste disponible localement et s’actualise automatiquement toutes les cinq minutes.",
   "integrations.failed":

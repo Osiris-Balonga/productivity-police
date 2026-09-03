@@ -23,6 +23,7 @@ import {
   SessionValueRepository,
   VersionedStorageRepository,
 } from "@productivity-police/storage";
+import { selectBlockTaskGroups } from "@productivity-police/integrations";
 
 import { reevaluateOpenTabs } from "./enforcement-orchestrator";
 import { SessionTabOverrideRegistry } from "./tab-override-registry";
@@ -186,6 +187,7 @@ export function startDistractionRuntime(): void {
         locale: settings.locale === "fr" ? "fr" : "en",
         universe: settings.universe === "pro" ? "pro" : "student",
         overrides: validOverrides,
+        taskGroups: selectBlockTaskGroups(envelope.integrations),
       },
       openTabs,
       async (tabId, message) => {
