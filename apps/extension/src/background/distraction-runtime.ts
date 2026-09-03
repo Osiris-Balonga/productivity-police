@@ -19,6 +19,8 @@ import {
   VersionedStorageRepository,
 } from "@productivity-police/storage";
 
+import { reevaluateOpenTabs } from "./enforcement-orchestrator";
+
 const CLOCK_KEY = "distractionClockState";
 const HEARTBEAT_ALARM = "distraction-heartbeat";
 
@@ -79,11 +81,13 @@ export function startDistractionRuntime(): void {
 
   const reconcile = async (resumed: boolean): Promise<void> => {
     const now = new Date();
-    const [envelope, persistedClock, focusedWindow] = await Promise.all([
-      storage.read(),
-      clock.read(),
-      chrome.windows.getLastFocused({ populate: true }),
-    ]);
+    const [envelope, persistedClock, focusedWindow, openTabs] =
+      await Promise.all([
+        storage.read(),
+        clock.read(),
+        chrome.windows.getLastFocused({ populate: true }),
+        chrome.tabs.query({}),
+      ]);
     if (envelope === undefined) {
       return;
     }
@@ -128,14 +132,40 @@ export function startDistractionRuntime(): void {
       ? resumeDistractionClock(persistedClock ?? {}, observation, now)
       : transitionDistractionClock(persistedClock ?? {}, observation, now);
 
-    if (result.accounting !== undefined) {
-      await usage.add(
-        result.accounting.localDate,
-        result.accounting.siteId,
-        result.accounting.seconds,
-      );
-    }
+    const dailyUsage =
+      result.accounting === undefined
+        ? await usage.read(observation.localDate)
+        : await usage.add(
+            result.accounting.localDate,
+            result.accounting.siteId,
+            result.accounting.seconds,
+          );
     await clock.write(result.state);
+
+    const configuredAllowance = settings.dailyAllowanceMinutes;
+    const allowanceSeconds =
+      typeof configuredAllowance === "number" &&
+      Number.isFinite(configuredAllowance) &&
+      configuredAllowance >= 0
+        ? configuredAllowance * 60
+        : Number.POSITIVE_INFINITY;
+    await reevaluateOpenTabs(
+      {
+        enabled: observation.enabled,
+        scheduleState,
+        rules,
+        usedSeconds: dailyUsage.usedSeconds,
+        allowanceSeconds,
+      },
+      openTabs,
+      async (tabId, message) => {
+        try {
+          await chrome.tabs.sendMessage(tabId, message);
+        } catch {
+          // Tabs without an injected receiver do not need enforcement UI.
+        }
+      },
+    );
   };
 
   const queueReconciliation = (resumed = false): void => {

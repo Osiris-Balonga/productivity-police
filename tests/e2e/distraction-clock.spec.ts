@@ -138,6 +138,95 @@ test("E2E-07 alternates two blacklisted tabs without double counting", async ({
   expect(usage.bySiteSeconds["site-b"]).toBeGreaterThanOrEqual(59);
 });
 
+test("E2E-06 applies a work-period decision to an open tab without reload", async () => {
+  if (context === undefined) {
+    throw new Error("The extension browser context is unavailable");
+  }
+
+  await worker.evaluate(async () => {
+    const weekdays = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+    await chrome.storage.local.set({
+      productivityPolice: {
+        schemaVersion: 1,
+        settings: {
+          enabled: true,
+          dailyAllowanceMinutes: 0,
+          schedule: {
+            days: weekdays.map((weekday) => ({
+              weekday,
+              enabled: false,
+              periods: [],
+            })),
+          },
+        },
+        websiteRules: [
+          {
+            id: "schedule-site",
+            name: "Schedule Site",
+            domain: "127.0.0.1",
+            list: "blacklist",
+            createdAt: "2026-09-03T00:00:00.000Z",
+          },
+        ],
+        usageByDate: {},
+      },
+    });
+  });
+
+  const openTab = await context.newPage();
+  await openTab.goto(`http://127.0.0.1:${String(port)}/schedule`);
+  await expect
+    .poll(() =>
+      openTab.getAttribute("html", "data-productivity-police-decision"),
+    )
+    .toBe("ALLOW");
+  const navigationStart = await openTab.evaluate(
+    () => performance.getEntriesByType("navigation")[0]?.startTime,
+  );
+
+  await worker.evaluate(async () => {
+    const values = await chrome.storage.local.get("productivityPolice");
+    const envelope = values.productivityPolice as {
+      settings: {
+        schedule: {
+          days: {
+            weekday: string;
+            enabled: boolean;
+            periods: { start: string; end: string }[];
+          }[];
+        };
+      };
+    };
+    envelope.settings.schedule.days = envelope.settings.schedule.days.map(
+      (day) => ({
+        ...day,
+        enabled: true,
+        periods: [{ start: "00:00", end: "23:59" }],
+      }),
+    );
+    await chrome.storage.local.set({ productivityPolice: envelope });
+  });
+
+  await expect
+    .poll(() =>
+      openTab.getAttribute("html", "data-productivity-police-decision"),
+    )
+    .toBe("BLOCK");
+  expect(
+    await openTab.evaluate(
+      () => performance.getEntriesByType("navigation")[0]?.startTime,
+    ),
+  ).toBe(navigationStart);
+});
+
 async function readActiveSite(background: Worker): Promise<string | undefined> {
   return background.evaluate(async () => {
     const values = await chrome.storage.session.get("distractionClockState");
