@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Productivity Police",
+  "version": "0.0.0",
+  "description": "Enforce the focus rules you choose for yourself.",
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "options_page": "dashboard/index.html"
+}

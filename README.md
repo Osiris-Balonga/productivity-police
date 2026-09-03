@@ -2,7 +2,7 @@
 
 Productivity Police is a local-first Chrome extension that enforces user-defined work schedules and a shared daily distraction allowance across blacklisted websites.
 
-The repository is currently in its foundation phase. Product implementation has not started yet. The public project references are:
+The repository is currently in its foundation phase. The public project references are:
 
 1. [Product requirements](docs/specs/PRD.md)
 2. [Product roadmap](ROADMAP.md)
@@ -11,7 +11,7 @@ The repository is currently in its foundation phase. Product implementation has 
 5. [Testing strategy](docs/TESTING.md)
 6. [Contributing guide](CONTRIBUTING.md)
 
-## Planned workspace
+## Workspace
 
 ```text
 apps/extension/{background,content,popup,dashboard,manifest}
@@ -19,4 +19,4 @@ packages/{domain,integrations,i18n,storage,shared,ui}
 tests/{integration,e2e}
 ```
 
-The versioned specifications in `docs/specs/` are the canonical product and engineering references.
+Install the pinned toolchain with `corepack enable && pnpm install`, then run `pnpm validate` and `pnpm build`. The versioned specifications in `docs/specs/` are the canonical product and engineering references; [dependency decisions](docs/DEPENDENCIES.md) are recorded separately.
