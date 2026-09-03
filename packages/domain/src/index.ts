@@ -7,5 +7,6 @@ export * from "./dialogue";
 export * from "./override-workflow";
 export * from "./universe";
 export * from "./schedule";
+export * from "./settings";
 export * from "./time-zone";
 export * from "./website-rules";
