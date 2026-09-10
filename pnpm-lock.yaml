@@ -76,8 +76,8 @@ importers:
         specifier: 4.9.0
         version: 4.9.0(react@19.2.8)
       pdfjs-dist:
-        specifier: 6.2.108
-        version: 6.2.108
+        specifier: 6.3.289
+        version: 6.3.289
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -925,8 +925,8 @@ packages:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
 
-  pdfjs-dist@6.2.108:
-    resolution: {integrity: sha512-YxFb+SQcodN2rnX9Tn3dHYlqfb7NjlzzfONPpJd+AKoKtUjEdevTfbC07d5TcczzOK6261auRkP/M8OBHs9vFQ==}
+  pdfjs-dist@6.3.289:
+    resolution: {integrity: sha512-ZHjSVpDa3D6izMq8/04lvkhkATUmL9px6ChPaXc1k6nU2Mrhlg1/7F0bdUqCwUjw3NsPTfPZsMDUU6ZIcRaeQw==}
     engines: {node: '>=22.13.0 || >=24'}
 
   pdfkit@0.20.1:
@@ -1944,7 +1944,7 @@ snapshots:
 
   path-key@3.1.1: {}
 
-  pdfjs-dist@6.2.108:
+  pdfjs-dist@6.3.289:
     optionalDependencies:
       '@napi-rs/canvas': 1.0.8
 
